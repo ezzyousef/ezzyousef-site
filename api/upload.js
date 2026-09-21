@@ -1,7 +1,8 @@
 import { put } from '@vercel/blob';
 import { isAdmin } from './_lib/auth.js';
 
-export const config = { api: { bodyParser: { sizeLimit: '6mb' } } };
+// Vercel's Node runtime caps a request body at about 4.5 MB, so the 4 MB
+// image limit below stays safely under it.
 
 const ALLOWED = {
   'image/png': 'png',
