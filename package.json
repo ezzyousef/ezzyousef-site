@@ -1,0 +1,23 @@
+{
+  "name": "ezzyousef-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "hash": "node scripts/hash-password.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.4.0",
+    "bcryptjs": "3.0.3",
+    "jose": "6.2.3",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.0.1",
+    "vite": "8.0.10"
+  }
+}

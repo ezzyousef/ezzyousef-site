@@ -1,0 +1,353 @@
+{
+  "theme": {
+    "accent": "#0D6E8C",
+    "accentDark": "#4FC7E8",
+    "ground": "#EDF1F4",
+    "surface": "#FFFFFF",
+    "ink": "#0F1720",
+    "muted": "#5A6975",
+    "hair": "#D2DCE3",
+    "fontDisplay": "Spectral",
+    "fontBody": "Karla",
+    "fontMono": "JetBrains Mono",
+    "baseSize": 17,
+    "heroSize": 70,
+    "headingSize": 37,
+    "radius": 10,
+    "haze": true
+  },
+  "meta": {
+    "title": "Ezzeldien Yousef, Materials Researcher",
+    "description": "PhD researcher in Mechanical and Industrial Engineering at the University of Toronto. Polymer electrolytes, supercapacitors, nanomaterials and aerogel fibres."
+  },
+  "nav": [
+    { "label": "Research", "href": "#research" },
+    { "label": "Publications", "href": "#publications" },
+    { "label": "Software", "href": "#software" },
+    { "label": "Experience", "href": "#experience" },
+    { "label": "Background", "href": "#background" },
+    { "label": "Contact", "href": "#contact" }
+  ],
+  "hero": {
+    "available": "Open to collaboration and freelance work",
+    "showAvailable": true,
+    "name": "Ezzeldien Yousef",
+    "role": "PhD researcher in Mechanical & Industrial Engineering at the University of Toronto, in the Microcellular Plastics Manufacturing Laboratory. I work on polymer electrolytes, energy storage and aerogel fibres, and I build the software that turns laboratory data into results.",
+    "roleLinkText": "Microcellular Plastics Manufacturing Laboratory",
+    "roleLinkUrl": "https://mpml.mie.utoronto.ca/lab/personnel/",
+    "portrait": "/assets/portrait.jpg",
+    "links": [
+      { "label": "Email me", "url": "mailto:ezzyousef@aucegypt.edu", "primary": true },
+      { "label": "Google Scholar", "url": "https://scholar.google.com/citations?user=m0Rs9oIAAAAJ&hl=en", "primary": false },
+      { "label": "GitHub", "url": "https://github.com/ezzyousef", "primary": false },
+      { "label": "LinkedIn", "url": "https://www.linkedin.com/in/ezz-eldien-yousef", "primary": false }
+    ]
+  },
+  "stats": [
+    { "n": "12", "label": "Peer-reviewed papers" },
+    { "n": "7", "label": "Journals reviewed for" },
+    { "n": "4", "label": "Research tools built" }
+  ],
+  "research": {
+    "eyebrow": "What I work on",
+    "heading": "Making energy materials survive the conditions they are actually used in",
+    "paragraphs": [
+      "My research sits between chemistry and engineering: designing materials, measuring what they do, and explaining why. Most of it has been about electrolytes, the part of an energy-storage device that usually fails first when it gets too cold, too hot or too dry.",
+      "In my MSc work I tuned ion mobility and molecular confinement in gel electrolytes, and showed supercapacitors that keep cycling far below freezing. My PhD at the Microcellular Plastics Manufacturing Laboratory moves this into polymer processing: lightweight aerogel fibres for thermal insulation, including clothing and wearable applications."
+    ],
+    "tags": [
+      "Polymer electrolytes", "Supercapacitors", "Electrochemistry", "Nanomaterials",
+      "Aerogel fibres", "Polymer foaming", "Electrospinning", "Thermal insulation",
+      "Photocatalysis", "CO₂ electroreduction", "UV shielding", "Scientific data analysis"
+    ],
+    "methods": [
+      { "title": "Electrochemistry", "text": "Cyclic voltammetry, galvanostatic charge–discharge, impedance spectroscopy, chronoamperometry. Full supercapacitor device assembly and testing." },
+      { "title": "Characterization", "text": "SEM, TEM, XRD, EDX, Raman, FTIR, UV–Vis, BET and TGA, with interpretation rather than just acquisition." },
+      { "title": "Synthesis", "text": "Electrospinning, sol–gel, hydrothermal routes, electrodeposition, polymer gel and hydrogel preparation." },
+      { "title": "Analysis", "text": "OriginLab, Excel, publication figures, and purpose-built software for laboratory data workflows." }
+    ]
+  },
+  "publications": {
+    "eyebrow": "12 peer-reviewed articles",
+    "heading": "Publications",
+    "note": "Impact factors and citation counts as recorded in September 2026. The current list is on Google Scholar.",
+    "noteLinkText": "Google Scholar",
+    "noteLinkUrl": "https://scholar.google.com/citations?user=m0Rs9oIAAAAJ&hl=en",
+    "items": [
+      {
+        "title": "Halide-free protonic gel electrolytes for ultra-long-life, extreme-temperature energy storage",
+        "url": "https://pubs.rsc.org/ta/article/doi/10.1039/d6ta05502h/1298970/Halide-free-protonic-gel-electrolytes-for-ultra",
+        "authors": "E. Yousef, A. A. Ismail, G. E. Khedr, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Journal of Materials Chemistry A",
+        "tags": ["JIF 9.5", "Q1"],
+        "lead": "First author"
+      },
+      {
+        "title": "Engineering reline/carboxymethyl cellulose eutectogel electrolytes through nanoscale water confinement and coordination-driven ion percolation",
+        "url": "https://doi.org/10.1016/j.cej.2026.176245",
+        "authors": "A. A. Akar, M. A. Moselhy, G. E. Khedr, E. Yousef, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Chemical Engineering Journal",
+        "tags": ["JIF 13.2", "Q1", "3 citations"],
+        "lead": ""
+      },
+      {
+        "title": "Hierarchical aerogel-confined deep eutectic electrolytes for complete water immobilization and high-performance, freeze-tolerant supercapacitors",
+        "url": "https://doi.org/10.1039/D6TA00216A",
+        "authors": "M. A. Moselhy, G. E. Khedr, E. Yousef, A. A. Akar, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Journal of Materials Chemistry A",
+        "tags": ["JIF 9.5", "Q1", "3 citations"],
+        "lead": ""
+      },
+      {
+        "title": "LiBr@PQ-7 electrolyte for voltage-stable, freeze-tolerant supercapacitors",
+        "url": "https://www.sciencedirect.com/science/article/abs/pii/S1385894725122882",
+        "authors": "E. Yousef, G. E. Khedr, A. A. Akar, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Chemical Engineering Journal",
+        "tags": ["JIF 13.2", "Q1", "5 citations"],
+        "lead": "First author"
+      },
+      {
+        "title": "Cation-driven hydrogen bond dynamics in energy storage hydrogel electrolytes: unravelling ion–water–carbon interactions",
+        "url": "https://pubs.rsc.org/en/content/articlelanding/2025/ta/d5ta00825e/unauth",
+        "authors": "E. Yousef*, A. A. Akar*, A. A. M. Ismail, G. E. Khedr, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Journal of Materials Chemistry A",
+        "tags": ["JIF 9.5", "Q1", "15 citations"],
+        "lead": "Joint first author"
+      },
+      {
+        "title": "Tuning C–C coupling and selectivity in the CO₂ electrochemical reduction reaction via pyramidal dilute Sn–Cu alloy",
+        "url": "https://doi.org/10.1021/acsami.5c20454",
+        "authors": "A. A. Ashour, A. M. Abdelmohsen, G. E. Khedr, K. E. Salem, I. M. Badawy, E. Yousef, A. M. Agour, D. Higgins, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "ACS Applied Materials & Interfaces",
+        "tags": ["JIF 8.2", "Q1", "7 citations"],
+        "lead": ""
+      },
+      {
+        "title": "Recycled cellulose acetate/cerium vanadate nanoparticle composite membranes with tuned ultraviolet and blue light shielding capabilities",
+        "url": "https://doi.org/10.1021/acsapm.4c01778",
+        "authors": "E. Yousef, M. M. Taha, M. K. M. Ali, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "ACS Applied Polymer Materials",
+        "tags": ["JIF 5.0", "Q1", "14 citations"],
+        "lead": "First author"
+      },
+      {
+        "title": "Optimized poly(methyl methacrylate)/mixed-phase silver vanadate nanocomposites with tuned optical properties and hydrophobicity",
+        "url": "https://doi.org/10.1002/app.55831",
+        "authors": "E. Yousef, M. K. M. Ali, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Journal of Applied Polymer Science",
+        "tags": ["JIF 2.8", "Q2", "15 citations"],
+        "lead": "First author"
+      },
+      {
+        "title": "Tuning the optical properties and hydrophobicity of BiVO₄/PVC/PVP composites as potential candidates for optoelectronic applications",
+        "url": "https://doi.org/10.1016/j.optmat.2024.115193",
+        "authors": "E. Yousef, M. K. M. Ali, N. K. Allam",
+        "me": "E. Yousef",
+        "journal": "Optical Materials",
+        "tags": ["JIF 4.2", "Q1", "30 citations"],
+        "lead": "First author"
+      },
+      {
+        "title": "Electrospun nanofibrous scaffolds of polylactic acid loaded with ginger/MoO₃/CuO/graphene oxide: biocompatibility and antibacterial activity",
+        "url": "https://doi.org/10.1007/s00289-024-05322-w",
+        "authors": "E. Yousef, M. Salah, H. A. Yousef, M. Ibrahim, M. S. Mostafa, H. M. Abd Elkabeer, M. Khalaf, A.-H. M. Rasmey, I. Morad",
+        "me": "E. Yousef",
+        "journal": "Polymer Bulletin",
+        "tags": ["JIF 4.0", "Q2", "17 citations"],
+        "lead": "First author"
+      },
+      {
+        "title": "Removal of inorganic pollutants and recovery of nutrients from wastewater using electrocoagulation: a review",
+        "url": "https://doi.org/10.3390/separations11110320",
+        "authors": "M. Ammar, E. Yousef, S. Ashraf, J. Baltrusaitis",
+        "me": "E. Yousef",
+        "journal": "Separations",
+        "tags": ["JIF 2.7", "Q3", "23 citations"],
+        "lead": ""
+      },
+      {
+        "title": "A comprehensive review of the developments in electrocoagulation for removal of contaminants from wastewater",
+        "url": "https://www.mdpi.com/2297-8739/10/6/337",
+        "authors": "M. Ammar, E. Yousef, M. A. Mahmoud, S. Ashraf, J. Baltrusaitis",
+        "me": "E. Yousef",
+        "journal": "Separations",
+        "tags": ["JIF 2.7", "Q3", "69 citations"],
+        "lead": ""
+      }
+    ]
+  },
+  "software": {
+    "eyebrow": "Research tools I built",
+    "heading": "Software for the laboratory",
+    "intro": [
+      "Four desktop applications that take instrument files and return finished results and publication figures. Each one exists because a workflow in my own laboratory was slow, manual or easy to get wrong.",
+      "I use AI-assisted development for the implementation: I provide the scientific requirements, the equations and the experimental logic, and direct the build. My background is experimental science first and software second, and I would rather say that plainly than overstate it. Click any screenshot to enlarge it."
+    ],
+    "shared": "labkit, a shared internal library underneath all four applications: unit handling, figure styling, Excel writing and OriginLab export. Building it once is why every tool produces figures that look like they came from the same laboratory.",
+    "sharedLinkText": "Energy Materials Laboratory website",
+    "sharedLinkUrl": "https://eml-site.vercel.app/",
+    "sharedTail": "is a separate project, built for the group at AUC.",
+    "projects": [
+      {
+        "name": "AeroLab Studio",
+        "pills": ["Open source"],
+        "ghostPills": ["Aerogel fibres"],
+        "desc": "An analysis workbench for aerogel-fibre research. It implements every equation and measurement from three papers on thermoplastic-polyurethane aerogels, applied by hand or automatically, and exports straight into OriginLab and Excel.",
+        "featured": { "src": "/assets/aerolab-plots.png", "cap": "Plots, several runs of one measurement on shared axes" },
+        "thumbs": [
+          { "src": "/assets/aerolab-validation.png", "cap": "Validation, every case, its published and computed value, and its status" },
+          { "src": "/assets/aerolab-measurements.png", "cap": "Measurements, runs on the left, results on the right" },
+          { "src": "/assets/aerolab-export.png", "cap": "Export, scope, Excel workbook, OriginLab and figure set" }
+        ],
+        "facts": [
+          { "label": "59 equations", "text": "Every relation in the source papers, with unit conversion on each input and uncertainty propagated by central differences." },
+          { "label": "11 measurements", "text": "Stress–strain, cyclic loading, S–N, strain–life, density scaling, TGA, DSC, thermal properties, BET, Herschel–Bulkley, amplitude sweep." },
+          { "label": "26 validation cases", "text": "Recomputes values printed in the papers. Two are recorded as disagreements with the papers, with the reasoning stated, rather than quietly adjusted." }
+        ],
+        "links": [{ "label": "Repository", "url": "https://github.com/ezzyousef/AeroLab-Studio" }]
+      },
+      {
+        "name": "Supercap Suite",
+        "pills": ["Open source"],
+        "ghostPills": ["Electrochemistry"],
+        "desc": "The tool I wanted during my MSc. It turns raw electrochemical files into device performance: capacitance, energy and power density, rate behaviour and impedance, with the equations visible rather than hidden in a spreadsheet.",
+        "featured": { "src": "/assets/sc-nyquist.png", "cap": "An impedance spectrum previewed as a Nyquist plot" },
+        "thumbs": [
+          { "src": "/assets/sc-charge.png", "cap": "The charge / discharge tool before a file is loaded" },
+          { "src": "/assets/sc-rate.png", "cap": "The rate study tool" },
+          { "src": "/assets/sc-origin.png", "cap": "An impedance spectrum and its circuit fit, as built in OriginLab" }
+        ],
+        "facts": [
+          { "label": "Device metrics", "text": "Specific capacitance, energy and power density, coulombic efficiency, rate capability and cycling stability from CV and GCD data." },
+          { "label": "Impedance", "text": "Nyquist and Bode views with equivalent-circuit fitting, exported as a finished OriginLab figure." },
+          { "label": "Manual calculator", "text": "Every equation available on its own, so a single number can be checked without running a whole dataset." }
+        ],
+        "links": [{ "label": "Repository", "url": "https://github.com/ezzyousef/supercap_suite" }]
+      },
+      {
+        "name": "FTIR & XRD Toolkit",
+        "pills": ["Open source"],
+        "ghostPills": ["Characterization"],
+        "desc": "Spectra and diffraction patterns processed, identified and explained. It detects peaks, matches them against a reference database of material bands, and calculates the numbers that usually get done by hand.",
+        "featured": { "src": "/assets/fx-ftir.png", "cap": "An FTIR spectrum with detected peaks, database matches and reference bands" },
+        "thumbs": [
+          { "src": "/assets/fx-xrd.png", "cap": "An XRD pattern with d-spacings and Scherrer sizes calculated" },
+          { "src": "/assets/fx-origin.png", "cap": "Two FTIR spectra and a fitted-peak model, as built in OriginLab" },
+          { "src": "/assets/fx-database.png", "cap": "The reference database with a material's bands shown" }
+        ],
+        "facts": [
+          { "label": "Peak identification", "text": "Automatic detection with assignment against a built-in database of characteristic bands." },
+          { "label": "XRD analysis", "text": "d-spacings and Scherrer crystallite sizes calculated directly from the pattern." },
+          { "label": "Figure export", "text": "Fitted-peak models rebuilt in OriginLab with the wavenumber axis in the conventional direction." }
+        ],
+        "links": [{ "label": "Repository", "url": "https://github.com/ezzyousef/FTIR-XRD-Analysis-Toolkit" }]
+      },
+      {
+        "name": "Brookfield DV1 Logger",
+        "pills": ["Open source"],
+        "ghostPills": ["Instrument control"],
+        "desc": "A viscometer that could only show readings on its own screen now records them. The logger talks to a Brookfield DV1 over serial, captures a run automatically, and fits the rheology while the measurement is still going.",
+        "featured": { "src": "/assets/dv-dashboard.png", "cap": "The dashboard with a shear-rate sweep of a PVA hydrogel logged" },
+        "thumbs": [
+          { "src": "/assets/dv-viscosity.png", "cap": "Viscosity against shear rate with the power-law fit" },
+          { "src": "/assets/dv-origin.png", "cap": "Viscosity against shear rate, as built in OriginLab" },
+          { "src": "/assets/dv-serial.png", "cap": "The serial page: auto-capture and terminal" }
+        ],
+        "facts": [
+          { "label": "Live capture", "text": "Reads the instrument over serial and builds the session as the measurement runs, with a terminal for raw traffic." },
+          { "label": "Rheology fits", "text": "Viscosity against shear rate with power-law fitting and per-run statistics." },
+          { "label": "Session export", "text": "Full data tables out to Excel, and the same curve rebuilt as an OriginLab figure." }
+        ],
+        "links": [{ "label": "Repository", "url": "https://github.com/ezzyousef/brookfield-dv1-logger" }]
+      }
+    ]
+  },
+  "experience": {
+    "eyebrow": "Research positions",
+    "heading": "Experience",
+    "items": [
+      {
+        "when": "Sep 2026 – present",
+        "title": "Research Assistant",
+        "where": "Microcellular Plastics Manufacturing Laboratory",
+        "whereUrl": "https://mpml.mie.utoronto.ca/lab/personnel/",
+        "whereTail": ", University of Toronto",
+        "text": "Doctoral research on polymeric aerogels reinforced with nanofibres for clothing and thermal-insulation applications, under Prof. Chul B. Park."
+      },
+      {
+        "when": "May 2023 – Aug 2026",
+        "title": "Research Assistant",
+        "where": "Energy Materials Laboratory",
+        "whereUrl": "https://eml-site.vercel.app/",
+        "whereTail": ", The American University in Cairo",
+        "text": "Synthesis and characterization of polymeric membranes, semiconductors and quasi-solid-state electrolytes. Built and tested supercapacitor devices, ran full electrochemical characterization, and set up a UV reactor for UV-shielding work. Most of my publication record comes from this period."
+      },
+      {
+        "when": "2021 – May 2023",
+        "title": "Undergraduate Research Assistant",
+        "where": "Suez University",
+        "whereUrl": "",
+        "whereTail": "",
+        "text": "Nanofibrous scaffolds for wound healing under STDF grant 45441. The laboratory had no electrospinning system, so I built a working setup from available parts and tuned it until it produced stable fibres. Also applied electrocoagulation to contaminant removal from wastewater."
+      }
+    ]
+  },
+  "background": {
+    "eyebrow": "Background",
+    "heading": "Education, awards and service",
+    "education": [
+      { "when": "2026 – 2030", "title": "PhD, Mechanical & Industrial Engineering", "where": "University of Toronto", "text": "" },
+      { "when": "2023 – 2026", "title": "MSc Nanotechnology, GPA 4.0 / 4.0", "where": "The American University in Cairo", "text": "Thesis: “Tuning Ion Mobility and Molecular Confinement in High-Performance Polymer Electrolytes for Energy Storage”." },
+      { "when": "2018 – 2022", "title": "BSc, Physics (Engineering Physics)", "where": "Suez University. Very Good with Honors, ranked third in the class", "text": "" }
+    ],
+    "awardsTitle": "Awards",
+    "awards": [
+      { "name": "Allehdaan Best Thesis Award", "year": "2026" },
+      { "name": "School of Sciences & Engineering Honors, AUC", "year": "2026" },
+      { "name": "Best Researcher Award, Science Father", "year": "2024" },
+      { "name": "Laboratory Fellowship, AUC", "year": "2024" },
+      { "name": "University Fellowship, AUC", "year": "2023" }
+    ],
+    "reviewTitle": "Peer review",
+    "review": [
+      { "name": "Journal of Materials Science: Polymers", "year": "2025" },
+      { "name": "J. Materials Science: Materials in Electronics", "year": "2025" },
+      { "name": "Journal of Polymers and the Environment", "year": "2025" },
+      { "name": "Cellulose", "year": "2025" },
+      { "name": "Polymer Bulletin", "year": "2025" },
+      { "name": "Plasmonics", "year": "2025" },
+      { "name": "Polymer Engineering & Science", "year": "2025" }
+    ],
+    "leadershipTitle": "Leadership",
+    "leadership": "Founder and Vice President of the Innovative Nanotechnology Club at AUC, and co-founder of the Sustainability, Energy and Nanomaterials Association student chapter. Elected Vice President of the AUC student chapter of The Electrochemical Society. I have organized lecture series, workshops, competitions and outreach events around energy and nanotechnology."
+  },
+  "contact": {
+    "eyebrow": "Get in touch",
+    "heading": "Open to collaboration, consulting and research work",
+    "text": "I am interested in collaborations on energy materials and polymer processing, and I take on freelance work in electrochemical data analysis, characterization data interpretation, publication figures and scientific writing. If you have data and are not sure what it is telling you, send it over.",
+    "links": [
+      { "label": "ezzyousef@aucegypt.edu", "url": "mailto:ezzyousef@aucegypt.edu", "primary": true },
+      { "label": "+1 942 662 0110", "url": "tel:+19426620110", "primary": false },
+      { "label": "LinkedIn", "url": "https://www.linkedin.com/in/ezz-eldien-yousef", "primary": false },
+      { "label": "Google Scholar", "url": "https://scholar.google.com/citations?user=m0Rs9oIAAAAJ&hl=en", "primary": false },
+      { "label": "GitHub", "url": "https://github.com/ezzyousef", "primary": false }
+    ],
+    "groupsTitle": "Research groups",
+    "groups": [
+      { "label": "MPML, University of Toronto", "url": "https://mpml.mie.utoronto.ca/lab/personnel/" },
+      { "label": "Energy Materials Lab, AUC", "url": "https://eml-site.vercel.app/" }
+    ]
+  },
+  "footer": {
+    "left": "Ezzeldien Muhammed Yousef · Toronto, Canada",
+    "right": "Updated September 2026"
+  }
+}
