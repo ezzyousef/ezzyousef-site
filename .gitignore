@@ -5,3 +5,6 @@ dist/
 .env.local
 *.log
 .vercel-env.tmp
+
+.vercel
+.env*

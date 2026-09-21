@@ -356,12 +356,6 @@ export default function Admin({ content, setContent, onExit }) {
                   <Field label="Heading size"><Num value={t.headingSize} min={22} max={60} suffix="px" onChange={(v) => set(['theme', 'headingSize'], v)} /></Field>
                   <Field label="Corner rounding"><Num value={t.radius} min={0} max={28} suffix="px" onChange={(v) => set(['theme', 'radius'], v)} /></Field>
                 </div>
-                <Field label="Background glow behind the portrait">
-                  <label className="ad-check">
-                    <input type="checkbox" checked={!!t.haze} onChange={(e) => set(['theme', 'haze'], e.target.checked)} />
-                    <span>Show the soft colour wash in the hero</span>
-                  </label>
-                </Field>
               </>
             )}
 
