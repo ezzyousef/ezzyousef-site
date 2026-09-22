@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import seed from '../data/seed.json';
+import seed from './content.generated.json';
 import { api } from './lib/api.js';
 import { css, fontHref } from './theme.js';
 import Site from './site/Site.jsx';
@@ -16,8 +16,21 @@ function merge(base, override) {
   return override === undefined ? base : override;
 }
 
+const CACHE_KEY = 'site-content-v1';
+
+/** The last content this browser saw. Using it as the first paint means a
+ *  returning visitor never watches the page change under them. */
+function cached() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? merge(seed, JSON.parse(raw)) : seed;
+  } catch {
+    return seed;
+  }
+}
+
 export default function App() {
-  const [content, setContent] = useState(seed);
+  const [content, setContent] = useState(cached);
   const [loaded, setLoaded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(() => window.location.hash === '#admin');
 
@@ -26,7 +39,9 @@ export default function App() {
     api
       .getContent()
       .then((r) => {
-        if (alive && r && r.content) setContent(merge(seed, r.content));
+        if (!alive || !r || !r.content) return;
+        setContent(merge(seed, r.content));
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(r.content)); } catch { /* private mode */ }
       })
       .catch(() => { /* fall back to the version shipped with the build */ })
       .finally(() => alive && setLoaded(true));

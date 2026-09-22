@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const seed = JSON.parse(readFileSync('data/seed.json', 'utf8'));
+const seed = JSON.parse(readFileSync('src/content.generated.json', 'utf8'));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (ch) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
