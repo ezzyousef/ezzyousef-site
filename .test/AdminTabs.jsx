@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../lib/api.js';
-import { FONTS } from '../theme.js';
-import { PANEL_CSS } from './panel-css.js';
+import { api } from '../src/lib/api.js';
+import { FONTS } from '../src/theme.js';
+import { PANEL_CSS } from '../src/admin/panel-css.js';
 
 /* ------------------------------------------------------------------ utils */
 
@@ -237,9 +237,9 @@ const SECTIONS = [
   ['meta', 'Page & footer'],
 ];
 
-export default function Admin({ content, setContent, onExit }) {
-  const [token, setToken] = useState('');
-  const [tab, setTab] = useState('theme');
+export default function Admin({ content, setContent, onExit, startTab }) {
+  const [token, setToken] = useState('test-token');
+  const [tab, setTab] = useState(startTab || 'theme');
   const [note, setNote] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -325,9 +325,6 @@ export default function Admin({ content, setContent, onExit }) {
             <h1>{SECTIONS.find(([k]) => k === tab)[1]}</h1>
             <span className={'ad-state ' + (dirty ? 'dirty' : '')}>
               {dirty ? 'Unsaved changes' : 'All changes saved'}
-            </span>
-            <span className="ad-state" title="Version of the site you are running">
-              build {typeof __BUILD__ === 'string' ? __BUILD__ : '?'}
             </span>
             <button className="ad-btn primary" disabled={!dirty || saving} onClick={save}>
               {saving ? 'Saving…' : 'Save'}
