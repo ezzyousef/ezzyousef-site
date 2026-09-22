@@ -52,6 +52,18 @@ for (const l of seed.contact.links || []) {
 }
 part.push('</ul>');
 
+// Each paper as a ScholarlyArticle, so search engines index the work itself
+// rather than just the page it sits on.
+const articles = (seed.publications.items || []).map((p) => ({
+  '@context': 'https://schema.org',
+  '@type': 'ScholarlyArticle',
+  headline: p.title,
+  name: p.title,
+  author: String(p.authors || '').split(',').map((a) => ({ '@type': 'Person', name: a.trim() })),
+  isPartOf: p.journal ? { '@type': 'Periodical', name: p.journal } : undefined,
+  url: p.url || undefined,
+}));
+
 const person = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -77,10 +89,10 @@ html = html.replace(
   '<div id="root"></div>',
   `<div id="root">${part.join('')}</div>`
 );
-html = html.replace(
-  '</head>',
-  `<script type="application/ld+json">${JSON.stringify(person)}</script></head>`
-);
+const ld = [person, ...articles]
+  .map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`)
+  .join('');
+html = html.replace('</head>', `${ld}</head>`);
 // Keep the title and description in step with the content.
 html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(seed.meta.title)}</title>`);
 html = html.replace(

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Picture, { largest } from './Picture.jsx';
 
-
-/** A small pointer-follow tilt on screenshots, figures and project blocks,
+/** A small pointer-follow tilt on screenshots, figures and project blocks.
  *  Skipped entirely when the viewer asks for reduced motion. */
 const REDUCED = typeof window !== 'undefined' && window.matchMedia
   ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -51,17 +51,6 @@ function Linked({ text, phrase, url }) {
   );
 }
 
-function Plate({ src, cap, onOpen }) {
-  if (!src) return null;
-  return (
-    <figure className="tilt" {...tilt(6, 3)}>
-      <img className="shot" src={src} alt={cap || ''} loading="lazy" decoding="async"
-           onClick={() => onOpen({ src, cap })} />
-      {cap && <figcaption>{cap}</figcaption>}
-    </figure>
-  );
-}
-
 /** The margin column that carries a section's number and label. */
 function Rail({ n, label }) {
   return (
@@ -72,16 +61,88 @@ function Rail({ n, label }) {
   );
 }
 
+function Plate({ item, group, index, onOpen, sizes }) {
+  if (!item || !item.src) return null;
+  return (
+    <figure className="tilt" {...tilt(6, 3)}>
+      <Picture className="shot" src={item.src} alt={item.cap} sizes={sizes}
+               onClick={() => onOpen(group, index)} />
+      {item.cap && <figcaption>{item.cap}</figcaption>}
+    </figure>
+  );
+}
+
+/** One line of plain text, the way it would be pasted into a reference list. */
+function citationOf(p) {
+  const bits = [p.authors, `“${p.title}”`, p.journal].filter(Boolean);
+  return bits.join('. ').replace(/\.\.$/, '.') + (p.url ? `. ${p.url}` : '.');
+}
+
+function CopyCitation({ pub }) {
+  const [state, setState] = useState('idle');
+  const copy = async () => {
+    const text = citationOf(pub);
+    try {
+      await navigator.clipboard.writeText(text);
+      setState('done');
+    } catch {
+      setState('manual');
+    }
+    setTimeout(() => setState('idle'), 2500);
+  };
+  return (
+    <button type="button" className="cite" onClick={copy}
+            aria-label={`Copy the citation for ${pub.title}`}>
+      {state === 'done' ? 'copied' : state === 'manual' ? 'press ⌘C' : 'cite'}
+    </button>
+  );
+}
+
 export default function Site({ c }) {
-  const [zoom, setZoom] = useState(null);
+  const [zoom, setZoom] = useState(null);        // { group, index }
   const [active, setActive] = useState('');
+  const [onlyFirst, setOnlyFirst] = useState(false);
   const dialogRef = useRef(null);
+  const lastFocus = useRef(null);
+
+  const openGallery = useCallback((group, index) => {
+    lastFocus.current = document.activeElement;
+    setZoom({ group, index });
+  }, []);
+
+  const close = useCallback(() => {
+    setZoom(null);
+    if (lastFocus.current && lastFocus.current.focus) lastFocus.current.focus();
+  }, []);
+
+  const step = useCallback((delta) => {
+    setZoom((z) => (z ? { ...z, index: (z.index + delta + z.group.length) % z.group.length } : z));
+  }, []);
 
   useEffect(() => {
     const d = dialogRef.current;
     if (!d) return;
     if (zoom && !d.open) d.showModal();
     if (!zoom && d.open) d.close();
+  }, [zoom]);
+
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zoom, step]);
+
+  // preload the neighbours so arrowing through feels instant
+  useEffect(() => {
+    if (!zoom || zoom.group.length < 2) return;
+    [1, -1].forEach((d) => {
+      const n = zoom.group[(zoom.index + d + zoom.group.length) % zoom.group.length];
+      if (n) { const img = new Image(); img.src = largest(n.src); }
+    });
   }, [zoom]);
 
   useEffect(() => {
@@ -102,8 +163,28 @@ export default function Site({ c }) {
     return () => io.disconnect();
   }, [c.nav]);
 
-  const open = (img) => setZoom(img);
   const ext = (u) => (u || '').startsWith('http');
+  const pubs = c.publications.items || [];
+  const firstCount = useMemo(
+    () => pubs.filter((p) => (p.lead || '').toLowerCase().includes('first')).length, [pubs]);
+  const shown = onlyFirst
+    ? pubs.filter((p) => (p.lead || '').toLowerCase().includes('first'))
+    : pubs;
+
+  const figures = c.research.figures || [];
+  const current = zoom ? zoom.group[zoom.index] : null;
+
+  // swipe on a touch screen
+  const touch = useRef(null);
+  const swipe = {
+    onTouchStart: (e) => { touch.current = e.changedTouches[0].clientX; },
+    onTouchEnd: (e) => {
+      if (touch.current == null) return;
+      const dx = e.changedTouches[0].clientX - touch.current;
+      if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+      touch.current = null;
+    },
+  };
 
   return (
     <>
@@ -126,8 +207,9 @@ export default function Site({ c }) {
         <div className="opener-in">
           <div>
             {c.hero.portrait && (
-              <img className="plate" src={c.hero.portrait} alt={`Portrait of ${c.hero.name}`}
-                   width="168" height="210" />
+              <Picture className="plate" src={c.hero.portrait} eager
+                       sizes="(max-width: 760px) 116px, 168px"
+                       alt={`Portrait of ${c.hero.name}`} />
             )}
           </div>
           <div>
@@ -142,7 +224,7 @@ export default function Site({ c }) {
             {(c.stats || []).length > 0 && (
               <div className="facts-line">
                 {c.stats.map((s, i) => (
-                  <span key={i}><b>{s.n}</b> {s.label.toLowerCase()}</span>
+                  <span key={i}><b>{s.n}</b> {String(s.label || '').toLowerCase()}</span>
                 ))}
               </div>
             )}
@@ -172,14 +254,15 @@ export default function Site({ c }) {
                   {c.research.tags.map((t, i) => <li key={i}>{t}</li>)}
                 </ul>
               )}
-              {(c.research.figures || []).length > 0 && (
+              {figures.length > 0 && (
                 <>
                   {c.research.figuresNote && <p className="fignote">{c.research.figuresNote}</p>}
                   <div className="figrow">
-                    {c.research.figures.map((f, i) => (
+                    {figures.map((f, i) => (
                       <figure key={i} className="tilt" {...tilt(5, 3)}>
-                        <img src={f.src} alt={f.cap || ''} loading="lazy" decoding="async"
-                             onClick={() => open({ src: f.src, cap: f.cap })} />
+                        <Picture src={f.src} alt={f.cap}
+                                 sizes="(max-width: 700px) 92vw, 30vw"
+                                 onClick={() => openGallery(figures, i)} />
                         {f.cap && <figcaption>{f.cap}</figcaption>}
                       </figure>
                     ))}
@@ -205,9 +288,23 @@ export default function Site({ c }) {
             <Rail n={2} label="Publications" />
             <div>
               <h2>{c.publications.heading}</h2>
+
+              {firstCount > 0 && pubs.length > firstCount && (
+                <div className="filters" role="group" aria-label="Filter publications">
+                  <button type="button" className={!onlyFirst ? 'on' : ''}
+                          aria-pressed={!onlyFirst} onClick={() => setOnlyFirst(false)}>
+                    All {pubs.length}
+                  </button>
+                  <button type="button" className={onlyFirst ? 'on' : ''}
+                          aria-pressed={onlyFirst} onClick={() => setOnlyFirst(true)}>
+                    First author {firstCount}
+                  </button>
+                </div>
+              )}
+
               <ol className="pubs">
-                {(c.publications.items || []).map((p, i) => (
-                  <li className="pub" key={i}>
+                {shown.map((p, i) => (
+                  <li className="pub" key={p.title || i}>
                     <div className="pub-t">
                       {p.url ? <a href={p.url} target="_blank" rel="noopener">{p.title}</a> : p.title}
                     </div>
@@ -216,6 +313,7 @@ export default function Site({ c }) {
                       {p.journal && <em className="pub-j">{p.journal}</em>}
                       {(p.tags || []).map((t, j) => <span key={j}>{t}</span>)}
                       {p.lead && <span className="lead">{p.lead}</span>}
+                      <CopyCitation pub={p} />
                     </div>
                   </li>
                 ))}
@@ -239,50 +337,51 @@ export default function Site({ c }) {
             </div>
           </div>
 
-          {(c.software.projects || []).map((pr, i) => (
-            <article className="proj tilt" key={i} {...tilt(3, 4)}>
-              <div className="band" style={{ borderTop: 0, paddingTop: 0 }}>
-                <div className="rail" />
-                <div>
-                  <div className="proj-head">
-                    <h3>{pr.name}</h3>
-                    {[...(pr.pills || []), ...(pr.ghostPills || [])].map((p, j) => (
-                      <span className="proj-kind" key={j}>{p}</span>
-                    ))}
-                  </div>
-                  <div className="proj-split">
-                    <p>{pr.desc}</p>
-                    {(pr.facts || []).length > 0 && (
-                      <ul className="facts">
-                        {pr.facts.map((f, j) => (
-                          <li key={j}><b>{f.label}</b><span>{f.text}</span></li>
+          {(c.software.projects || []).map((pr, i) => {
+            const group = [pr.featured, ...(pr.thumbs || [])].filter((x) => x && x.src);
+            return (
+              <article className="proj tilt" key={i} {...tilt(3, 4)}>
+                <div className="band" style={{ borderTop: 0, paddingTop: 0 }}>
+                  <div className="rail" />
+                  <div>
+                    <div className="proj-head">
+                      <h3>{pr.name}</h3>
+                      {[...(pr.pills || []), ...(pr.ghostPills || [])].map((p, j) => (
+                        <span className="proj-kind" key={j}>{p}</span>
+                      ))}
+                    </div>
+                    <div className="proj-split">
+                      <p>{pr.desc}</p>
+                      {(pr.facts || []).length > 0 && (
+                        <ul className="facts">
+                          {pr.facts.map((f, j) => (
+                            <li key={j}><b>{f.label}</b><span>{f.text}</span></li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {group.length > 0 && (
+                      <div className="plates">
+                        {group.map((g, j) => (
+                          <Plate key={j} item={g} group={group} index={j} onOpen={openGallery}
+                                 sizes="(max-width: 800px) 45vw, 22vw" />
                         ))}
-                      </ul>
+                      </div>
+                    )}
+
+                    {(pr.links || []).length > 0 && (
+                      <div className="proj-links">
+                        {pr.links.map((l, j) => (
+                          <a key={j} href={l.url} target="_blank" rel="noopener">{l.label}</a>
+                        ))}
+                      </div>
                     )}
                   </div>
-
-                  {(pr.featured || (pr.thumbs || []).length > 0) && (
-                    <div className="plates">
-                      {pr.featured && pr.featured.src && (
-                        <Plate src={pr.featured.src} cap={pr.featured.cap} onOpen={open} />
-                      )}
-                      {(pr.thumbs || []).map((t, j) => (
-                        <Plate key={j} src={t.src} cap={t.cap} onOpen={open} />
-                      ))}
-                    </div>
-                  )}
-
-                  {(pr.links || []).length > 0 && (
-                    <div className="proj-links">
-                      {pr.links.map((l, j) => (
-                        <a key={j} href={l.url} target="_blank" rel="noopener">{l.label}</a>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
 
           {c.software.shared && (
             <div className="band" style={{ borderTop: 0, paddingTop: 0 }}>
@@ -415,13 +514,21 @@ export default function Site({ c }) {
         </div>
       </footer>
 
-      <dialog className="lb" ref={dialogRef} onClose={() => setZoom(null)}
-              onClick={(e) => { if (e.target === dialogRef.current) setZoom(null); }}>
-        <div className="lb-box">
-          {zoom && <img src={zoom.src} alt={zoom.cap || ''} />}
+      <dialog className="lb" ref={dialogRef} aria-modal="true" aria-label="Image viewer"
+              onClose={close}
+              onClick={(e) => { if (e.target === dialogRef.current) close(); }}>
+        <div className="lb-box" {...swipe}>
+          {current && <img src={largest(current.src)} alt={current.cap || ''} />}
           <div className="lb-bar">
-            <span className="lb-cap">{zoom ? zoom.cap : ''}</span>
-            <button className="lb-close" type="button" onClick={() => setZoom(null)}>Close</button>
+            {zoom && zoom.group.length > 1 && (
+              <>
+                <button className="lb-nav" type="button" onClick={() => step(-1)} aria-label="Previous image">←</button>
+                <span className="lb-count">{zoom.index + 1} / {zoom.group.length}</span>
+                <button className="lb-nav" type="button" onClick={() => step(1)} aria-label="Next image">→</button>
+              </>
+            )}
+            <span className="lb-cap">{current ? current.cap : ''}</span>
+            <button className="lb-close" type="button" onClick={close}>Close</button>
           </div>
         </div>
       </dialog>

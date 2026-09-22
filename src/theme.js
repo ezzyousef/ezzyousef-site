@@ -288,6 +288,32 @@ footer { border-top: 1px solid var(--rule); }
   display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   font-family: var(--mono); font-size: 11px; color: var(--faint); }
 
+/* ------------------------------------------------- publication controls */
+.filters { display: flex; gap: 8px; margin: 0 0 18px; }
+.filters button {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase;
+  background: transparent; color: var(--faint); border: 1px solid var(--rule);
+  padding: 6px 12px; cursor: pointer; border-radius: 2px; transition: color .15s, border-color .15s;
+}
+.filters button:hover { color: var(--ink); }
+.filters button.on { color: var(--accent); border-color: var(--accent); }
+
+.cite {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .05em;
+  background: transparent; color: var(--faint); border: 0; border-bottom: 1px solid var(--rule);
+  padding: 0 0 1px; cursor: pointer; transition: color .15s, border-color .15s;
+}
+.cite:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+.lb-nav {
+  font-family: var(--mono); font-size: 13px; line-height: 1;
+  background: transparent; color: var(--muted); border: 1px solid var(--rule);
+  padding: 6px 11px; cursor: pointer; flex: none;
+}
+.lb-nav:hover { color: var(--accent); border-color: var(--accent); }
+.lb-count { font-family: var(--mono); font-size: 11px; color: var(--faint);
+  font-variant-numeric: tabular-nums; flex: none; }
+
 /* ------------------------------------------------------------- lightbox */
 dialog.lb { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 94vh; color: var(--ink); }
 dialog.lb::backdrop { background: var(--scrim); }
@@ -298,5 +324,27 @@ dialog.lb::backdrop { background: var(--scrim); }
 .lb-close { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
   background: transparent; color: var(--muted); border: 1px solid var(--rule); padding: 7px 14px; cursor: pointer; }
 .lb-close:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---------------------------------------------------------------- print */
+@media print {
+  :root { --paper: #fff; --surface: #fff; --ink: #000; --muted: #333; --faint: #555;
+          --rule: #bbb; --accent: #000; }
+  body { font-size: 10.5pt; line-height: 1.4; }
+  .topbar, .skip, .filters, .cite, .lb, .proj-links, .status, .plates, .figrow { display: none !important; }
+  .page, .closing-in { max-width: none; padding-inline: 0; }
+  section { padding-block: 14pt 0; break-inside: avoid; }
+  section + section .band { border-top: 1px solid var(--rule); padding-top: 12pt; }
+  .band, .opener-in { grid-template-columns: 110pt minmax(0, 1fr); gap: 0 14pt; }
+  .plate { width: 92pt; }
+  h1 { font-size: 22pt; margin-bottom: 8pt; }
+  h2 { font-size: 13pt; margin-bottom: 8pt; }
+  h3 { font-size: 11pt; }
+  .lede { font-size: 11pt; margin-bottom: 10pt; }
+  p, .pub, .tl li { break-inside: avoid; }
+  .pub-t a::after { content: " (" attr(href) ")"; font-size: 8pt; color: #555; word-break: break-all; }
+  .closing { margin-top: 18pt; background: none; }
+  footer { border: 0; }
+  a { text-decoration: none; }
+}
 `;
 }
