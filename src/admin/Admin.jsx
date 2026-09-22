@@ -425,6 +425,20 @@ export default function Admin({ content, setContent, onExit }) {
                 <Field label="Heading"><Area rows={2} value={content.research.heading} onChange={(v) => set(['research', 'heading'], v)} /></Field>
                 <Field label="Paragraphs"><ParaList items={content.research.paragraphs} onChange={(v) => set(['research', 'paragraphs'], v)} /></Field>
                 <Field label="Topic tags"><StringList items={content.research.tags} onChange={(v) => set(['research', 'tags'], v)} placeholder="Polymer electrolytes" /></Field>
+                <Field label="Figure caption heading">
+                  <Text value={content.research.figuresNote} onChange={(v) => set(['research', 'figuresNote'], v)} />
+                </Field>
+                <Field label="Figures from your papers">
+                  <Rows items={content.research.figures} blank={{ src: '', cap: '' }} addLabel="figure"
+                        onChange={(v) => set(['research', 'figures'], v)}
+                        render={(item, patch) => (
+                          <>
+                            <ImagePick value={item.src} token={token} onNotify={notify}
+                                       onChange={(v) => patch({ src: v })} />
+                            <Field label="Caption"><Area rows={2} value={item.cap} onChange={(v) => patch({ cap: v })} /></Field>
+                          </>
+                        )} />
+                </Field>
                 <Field label="Method columns">
                   <Rows items={content.research.methods} blank={{ title: '', text: '' }} addLabel="column"
                         onChange={(v) => set(['research', 'methods'], v)}

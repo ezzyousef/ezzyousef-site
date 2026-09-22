@@ -5,8 +5,8 @@
     "ground": "#FCFBF8",
     "surface": "#FFFFFF",
     "ink": "#1A1A18",
-    "muted": "#6B685F",
-    "hair": "#DCD9D0",
+    "muted": "#27406B",
+    "hair": "#D7DAE2",
     "fontDisplay": "Newsreader",
     "fontBody": "Archivo",
     "fontMono": "IBM Plex Mono",
@@ -127,6 +127,21 @@
       {
         "title": "Analysis",
         "text": "OriginLab, Excel, publication figures, and purpose-built software for laboratory data workflows."
+      }
+    ],
+    "figuresNote": "Figures from my own published work.",
+    "figures": [
+      {
+        "src": "/assets/fig-ppa-pam.jpg",
+        "cap": "PPA/PAM proton-conducting hydrogel, frozen at −65 °C and dried. From the halide-free protonic gel electrolyte work."
+      },
+      {
+        "src": "/assets/fig-cmc-aerogel.jpg",
+        "cap": "Carboxymethyl cellulose aerogel loaded with a deep eutectic electrolyte, for freeze-tolerant supercapacitors."
+      },
+      {
+        "src": "/assets/fig-cevo4-xrd.jpg",
+        "cap": "XRD patterns and FTIR spectra of recycled cellulose acetate membranes filled with CeVO₄."
       }
     ]
   },

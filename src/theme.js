@@ -61,8 +61,8 @@ export function css(t) {
     --surface: #1A1A15;
     --sunken: #100F0B;
     --ink: #EAE7DE;
-    --muted: #9B978C;
-    --faint: #6E6B62;
+    --muted: ${shift(t.muted, 0.58)};
+    --faint: ${shift(t.muted, 0.38)};
     --rule: #2D2C26;
     --accent: ${dAccent};
     --accent-ink: #14140F;
@@ -228,6 +228,14 @@ h1 { font-family: var(--display); font-weight: 500; letter-spacing: -.028em; lin
 .facts li:first-child { border-top: 0; padding-top: 0; }
 .facts b { font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em; color: var(--accent); font-weight: 500; }
 .facts span { font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+
+.figrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 30px; }
+.figrow figure { margin: 0; }
+.figrow img { width: 100%; height: auto; background: #fff; border: 1px solid var(--rule); border-radius: 1px; cursor: zoom-in; }
+.figrow img:hover { border-color: var(--accent); }
+.fignote { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faint); margin: 30px 0 0; }
+.fignote + .figrow { margin-top: 12px; }
 
 .plates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 26px; }
 @media (max-width: 800px) { .plates { grid-template-columns: repeat(2, 1fr); } }

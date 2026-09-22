@@ -150,6 +150,20 @@ export default function Site({ c }) {
                   {c.research.tags.map((t, i) => <li key={i}>{t}</li>)}
                 </ul>
               )}
+              {(c.research.figures || []).length > 0 && (
+                <>
+                  {c.research.figuresNote && <p className="fignote">{c.research.figuresNote}</p>}
+                  <div className="figrow">
+                    {c.research.figures.map((f, i) => (
+                      <figure key={i}>
+                        <img src={f.src} alt={f.cap || ''} loading="lazy" decoding="async"
+                             onClick={() => open({ src: f.src, cap: f.cap })} />
+                        {f.cap && <figcaption>{f.cap}</figcaption>}
+                      </figure>
+                    ))}
+                  </div>
+                </>
+              )}
               {(c.research.methods || []).length > 0 && (
                 <div className="cols">
                   {c.research.methods.map((m, i) => (
