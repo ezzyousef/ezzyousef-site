@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 
+
+/** A small pointer-follow tilt, so cards feel like objects rather than boxes.
+ *  Skipped entirely when the viewer asks for reduced motion. */
+const REDUCED = typeof window !== 'undefined' && window.matchMedia
+  ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  : false;
+
+function tilt(max = 5, lift = 4) {
+  if (REDUCED) return {};
+  return {
+    onMouseMove: (e) => {
+      const el = e.currentTarget;
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.transform =
+        `perspective(900px) rotateX(${(-y * max).toFixed(2)}deg) rotateY(${(x * max).toFixed(2)}deg) translateY(-${lift}px)`;
+    },
+    onMouseLeave: (e) => { e.currentTarget.style.transform = ''; },
+  };
+}
+
 /** Bolds the person's own name inside an author string. */
 function Authors({ authors, me }) {
   if (!me || !authors || !authors.includes(me)) return <>{authors}</>;
@@ -32,7 +54,7 @@ function Linked({ text, phrase, url }) {
 function Plate({ src, cap, onOpen }) {
   if (!src) return null;
   return (
-    <figure>
+    <figure className="card tilt" {...tilt(6, 3)}>
       <img className="shot" src={src} alt={cap || ''} loading="lazy" decoding="async"
            onClick={() => onOpen({ src, cap })} />
       {cap && <figcaption>{cap}</figcaption>}
@@ -155,7 +177,7 @@ export default function Site({ c }) {
                   {c.research.figuresNote && <p className="fignote">{c.research.figuresNote}</p>}
                   <div className="figrow">
                     {c.research.figures.map((f, i) => (
-                      <figure key={i}>
+                      <figure key={i} className="card tilt" {...tilt(5, 3)}>
                         <img src={f.src} alt={f.cap || ''} loading="lazy" decoding="async"
                              onClick={() => open({ src: f.src, cap: f.cap })} />
                         {f.cap && <figcaption>{f.cap}</figcaption>}
@@ -167,7 +189,7 @@ export default function Site({ c }) {
               {(c.research.methods || []).length > 0 && (
                 <div className="cols">
                   {c.research.methods.map((m, i) => (
-                    <div key={i}>
+                    <div key={i} className="method card">
                       <p className="col-h">{m.title}</p>
                       <p className="col-t">{m.text}</p>
                     </div>
@@ -185,7 +207,7 @@ export default function Site({ c }) {
               <h2>{c.publications.heading}</h2>
               <ol className="pubs">
                 {(c.publications.items || []).map((p, i) => (
-                  <li className="pub" key={i}>
+                  <li className="pub card" key={i}>
                     <div className="pub-t">
                       {p.url ? <a href={p.url} target="_blank" rel="noopener">{p.title}</a> : p.title}
                     </div>
@@ -218,7 +240,7 @@ export default function Site({ c }) {
           </div>
 
           {(c.software.projects || []).map((pr, i) => (
-            <article className="proj" key={i}>
+            <article className="proj card card-pad tilt" key={i} {...tilt(3, 4)}>
               <div className="band" style={{ borderTop: 0, paddingTop: 0 }}>
                 <div className="rail" />
                 <div>
@@ -288,7 +310,7 @@ export default function Site({ c }) {
               <h2>{c.experience.heading}</h2>
               <ul className="tl">
                 {(c.experience.items || []).map((e, i) => (
-                  <li key={i}>
+                  <li key={i} className="card">
                     <span className="when">{e.when}</span>
                     <div className="what">
                       <h3>{e.title}</h3>
@@ -314,7 +336,7 @@ export default function Site({ c }) {
               <h2>{c.background.heading}</h2>
               <ul className="tl">
                 {(c.background.education || []).map((e, i) => (
-                  <li key={i}>
+                  <li key={i} className="card">
                     <span className="when">{e.when}</span>
                     <div className="what">
                       <h3>{e.title}</h3>
