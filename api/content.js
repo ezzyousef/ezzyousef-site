@@ -2,6 +2,40 @@ import { list, put } from '@vercel/blob';
 import { isAdmin, rateLimited } from './_lib/auth.js';
 
 const KEY = 'content.json';
+const MARKER = 'deploy-marker.json';
+const MIN_GAP_MS = 3 * 60 * 1000;
+
+/**
+ * A save changes the content in storage, but the build still carries a copy
+ * baked in at deploy time. Asking for a rebuild here keeps that copy current,
+ * so a first-time visitor never sees the previous version for a moment.
+ *
+ * Fire and forget: a failure here must never fail the save. Rebuilds are
+ * spaced out so a burst of edits cannot start a queue of builds.
+ */
+async function requestRebuild() {
+  const hook = process.env.DEPLOY_HOOK_URL;
+  if (!hook) return 'no hook configured';
+  try {
+    let last = 0;
+    const { blobs } = await list({ prefix: MARKER, limit: 1 });
+    const hit = blobs.find((b) => b.pathname === MARKER);
+    if (hit) {
+      const r = await fetch(hit.url, { cache: 'no-store' });
+      if (r.ok) last = Date.parse((await r.json()).at) || 0;
+    }
+    if (Date.now() - last < MIN_GAP_MS) return 'skipped, one was requested recently';
+
+    await put(MARKER, JSON.stringify({ at: new Date().toISOString() }), {
+      access: 'public', contentType: 'application/json',
+      addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 0,
+    });
+    await fetch(hook, { method: 'POST' });
+    return 'rebuild requested';
+  } catch (e) {
+    return 'rebuild could not be requested: ' + e.message;
+  }
+}
 
 async function readContent() {
   const { blobs } = await list({ prefix: KEY, limit: 1 });
@@ -53,7 +87,8 @@ export default async function handler(req, res) {
         allowOverwrite: true,
         cacheControlMaxAge: 30,
       });
-      return res.status(200).json({ ok: true, savedAt: new Date().toISOString() });
+      const rebuild = await requestRebuild();
+      return res.status(200).json({ ok: true, savedAt: new Date().toISOString(), rebuild });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }

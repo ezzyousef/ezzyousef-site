@@ -35,6 +35,18 @@ Only three serverless functions, so there is plenty of room under Vercel's limit
 
 ## Deploying
 
+Saving in the dashboard also asks Vercel to rebuild, so the copy of the
+content baked into the build stays current and a first-time visitor never sees
+the previous version for a moment. This needs one environment variable:
+
+- `DEPLOY_HOOK_URL` — Project Settings, Git, Deploy Hooks. Create one named
+  `content-save` on branch `main` and paste the URL it gives you.
+
+Without it, saving still works; the baked copy simply waits for the next push.
+Rebuilds are spaced at least three minutes apart, so a burst of edits cannot
+start a queue of builds.
+
+
 The GitHub repository is connected to the Vercel project, so **every push to
 `main` deploys itself**. No command to run: commit, push, and the live site
 updates in about a minute. Vercel builds a preview for any other branch.
