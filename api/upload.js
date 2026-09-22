@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob';
+import sharp from 'sharp';
 import { isAdmin } from './_lib/auth.js';
 
 // Vercel's Node runtime caps a request body at about 4.5 MB, so the 4 MB
@@ -30,9 +31,29 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No image data received.' });
   }
 
-  const buf = Buffer.from(data, 'base64');
+  let buf = Buffer.from(data, 'base64');
   if (buf.length > 4 * 1024 * 1024) {
     return res.status(413).json({ error: 'That image is over 4 MB. Resize it and try again.' });
+  }
+
+  // Photographs off a phone are far larger than any slot on the page. Resize
+  // and convert to WebP on the way in, so an upload costs the visitor what it
+  // is worth rather than what the camera produced. SVG is left alone.
+  let ext = ALLOWED[type];
+  let outType = type;
+  const before = buf.length;
+  if (type !== 'image/svg+xml') {
+    try {
+      buf = await sharp(buf)
+        .rotate()                               // honour the camera orientation
+        .resize({ width: 1400, withoutEnlargement: true })
+        .webp({ quality: 82, effort: 4 })
+        .toBuffer();
+      ext = 'webp';
+      outType = 'image/webp';
+    } catch {
+      // unreadable or an unusual format: store what was sent
+    }
   }
 
   const stem = String(name || 'image')
@@ -43,12 +64,17 @@ export default async function handler(req, res) {
     .slice(0, 48) || 'image';
 
   try {
-    const blob = await put(`media/${stem}.${ALLOWED[type]}`, buf, {
+    const blob = await put(`media/${stem}.${ext}`, buf, {
       access: 'public',
-      contentType: type,
+      contentType: outType,
       addRandomSuffix: true,
     });
-    return res.status(200).json({ url: blob.url, pathname: blob.pathname });
+    return res.status(200).json({
+      url: blob.url,
+      pathname: blob.pathname,
+      bytes: buf.length,
+      savedBytes: Math.max(0, before - buf.length),
+    });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

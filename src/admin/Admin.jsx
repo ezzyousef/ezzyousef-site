@@ -157,7 +157,8 @@ function ImagePick({ value, onChange, token, onNotify }) {
     try {
       const r = await api.upload(token, file);
       onChange(r.url);
-      onNotify('Image uploaded.', 'ok');
+      const saved = r.savedBytes ? `, ${Math.round(r.savedBytes / 1024)} KB smaller` : '';
+      onNotify(`Image uploaded${saved}.`, 'ok');
     } catch (err) {
       onNotify(err.message, 'bad');
     } finally {

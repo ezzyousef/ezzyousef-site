@@ -51,13 +51,34 @@ function Linked({ text, phrase, url }) {
   );
 }
 
-/** The margin column that carries a section's number and label. */
-function Rail({ n, label }) {
+/** The margin column that carries a section's number and label. The number
+ *  links to its own section, the way a printed paper lets you cite one. */
+function Rail({ n, label, href }) {
+  const num = String(n).padStart(2, '0');
   return (
     <div className="rail">
-      <span className="rail-num">{String(n).padStart(2, '0')}</span>
+      {href
+        ? <a className="rail-num" href={href} aria-label={`Link to ${label}`}>{num}</a>
+        : <span className="rail-num">{num}</span>}
       <span className="rail-lab">{label}</span>
     </div>
+  );
+}
+
+/** Appears once the reader is past the opening screen. */
+function BackToTop() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setOn(window.scrollY > window.innerHeight);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return (
+    <button type="button" className={'totop' + (on ? ' on' : '')} aria-hidden={!on}
+            tabIndex={on ? 0 : -1} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      Top
+    </button>
   );
 }
 
@@ -245,7 +266,7 @@ export default function Site({ c }) {
 
         <section id="research" className="page">
           <div className="band">
-            <Rail n={1} label={c.research.eyebrow} />
+            <Rail n={1} label={c.research.eyebrow} href="#research" />
             <div>
               <h2>{c.research.heading}</h2>
               {(c.research.paragraphs || []).map((p, i) => <p key={i}>{p}</p>)}
@@ -285,7 +306,7 @@ export default function Site({ c }) {
 
         <section id="publications" className="page">
           <div className="band">
-            <Rail n={2} label="Publications" />
+            <Rail n={2} label="Publications" href="#publications" />
             <div>
               <h2>{c.publications.heading}</h2>
 
@@ -330,7 +351,7 @@ export default function Site({ c }) {
 
         <section id="software" className="page">
           <div className="band">
-            <Rail n={3} label="Software" />
+            <Rail n={3} label="Software" href="#software" />
             <div>
               <h2>{c.software.heading}</h2>
               {(c.software.intro || []).map((p, i) => <p key={i}>{p}</p>)}
@@ -404,7 +425,7 @@ export default function Site({ c }) {
 
         <section id="experience" className="page">
           <div className="band">
-            <Rail n={4} label="Experience" />
+            <Rail n={4} label="Experience" href="#experience" />
             <div>
               <h2>{c.experience.heading}</h2>
               <ul className="tl">
@@ -430,7 +451,7 @@ export default function Site({ c }) {
 
         <section id="background" className="page">
           <div className="band">
-            <Rail n={5} label="Background" />
+            <Rail n={5} label="Background" href="#background" />
             <div>
               <h2>{c.background.heading}</h2>
               <ul className="tl">
@@ -480,7 +501,7 @@ export default function Site({ c }) {
       <div className="closing" id="contact">
         <div className="closing-in">
           <div className="band">
-            <Rail n={6} label={c.contact.eyebrow} />
+            <Rail n={6} label={c.contact.eyebrow} href="#contact" />
             <div>
               <h2>{c.contact.heading}</h2>
               <p>{c.contact.text}</p>
@@ -506,6 +527,8 @@ export default function Site({ c }) {
           </div>
         </div>
       </div>
+
+      <BackToTop />
 
       <footer>
         <div className="foot-in">
