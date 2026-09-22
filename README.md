@@ -33,6 +33,15 @@ Only three serverless functions, so there is plenty of room under Vercel's limit
      `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
 4. **Redeploy** so the new variables are picked up.
 
+## Deploying
+
+The GitHub repository is connected to the Vercel project, so **every push to
+`main` deploys itself**. No command to run: commit, push, and the live site
+updates in about a minute. Vercel builds a preview for any other branch.
+
+Content edited in the dashboard does not need a deploy at all; it saves
+straight to storage and is live immediately.
+
 ## Editing
 
 Open the site, add `#admin`, sign in. The page behind the panel updates as you
