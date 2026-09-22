@@ -120,35 +120,10 @@ a:hover { color: var(--accent); }
 .skip:focus { left: 8px; top: 8px; }
 
 
-/* ---------------------------------------------------------------- cards */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: calc(var(--radius) + 6px);
-  box-shadow:
-    0 1px 1px rgba(20, 20, 15, .04),
-    0 2px 4px rgba(20, 20, 15, .04),
-    0 8px 16px -8px rgba(20, 20, 15, .10);
-  transition: transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s cubic-bezier(.2,.7,.3,1), border-color .22s;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.card:hover, .card:focus-within {
-  border-color: var(--accent);
-  box-shadow:
-    0 2px 2px rgba(20, 20, 15, .05),
-    0 8px 14px -4px rgba(20, 20, 15, .10),
-    0 26px 44px -22px rgba(20, 20, 15, .34);
-}
-.card-pad { padding: clamp(18px, 2.6vw, 28px); }
+/* the pointer tilt on screenshots, figures and project blocks */
+.tilt { transition: transform .12s ease-out, border-color .2s; }
 
-/* the pointer tilt is applied inline by the page; this keeps it smooth */
-.tilt { transition: transform .12s ease-out, box-shadow .22s cubic-bezier(.2,.7,.3,1), border-color .22s; }
-
-@media (prefers-reduced-motion: reduce) {
-  .card, .tilt { transition: border-color .2s; }
-  .card:hover, .card:focus-within { transform: none; }
-}
+@media (prefers-reduced-motion: reduce) { .tilt { transition: border-color .2s; } }
 
 /* ---------------------------------------------------------------- shell */
 .page { max-width: var(--max); margin: 0 auto; padding-inline: var(--pad); }
@@ -271,7 +246,6 @@ h1 { font-family: var(--display); font-weight: 500; letter-spacing: -.028em; lin
 .plates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 26px; }
 @media (max-width: 800px) { .plates { grid-template-columns: repeat(2, 1fr); } }
 .plates figure { margin: 0; overflow: hidden; }
-.plates figure.card figcaption { padding: 9px 12px 12px; margin-top: 0; }
 .shot { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top center;
   background: var(--sunken); border: 1px solid var(--rule); border-radius: 1px; cursor: zoom-in; transition: border-color .15s; }
 .shot:hover { border-color: var(--accent); }
