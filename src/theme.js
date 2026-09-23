@@ -110,6 +110,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 img { max-width: 100%; display: block; }
+picture { display: block; }
 a { color: var(--ink); text-decoration-color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:hover { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -167,7 +168,7 @@ p:last-child { margin-bottom: 0; }
 .opener-in { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); gap: 0 34px; align-items: start; }
 @media (max-width: 760px) { .opener-in { grid-template-columns: 1fr; } }
 
-.plate { width: var(--rail); max-width: 168px; aspect-ratio: 4 / 5; object-fit: cover; object-position: center top;
+.plate { width: var(--rail); height: auto; max-width: 168px; aspect-ratio: 4 / 5; object-fit: cover; object-position: center top;
   border-radius: 1px; filter: saturate(.92); }
 @media (max-width: 760px) { .plate { width: 116px; margin-bottom: 26px; } }
 
@@ -247,7 +248,7 @@ h1 { font-family: var(--display); font-weight: 500; letter-spacing: -.028em; lin
 .plates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 26px; }
 @media (max-width: 800px) { .plates { grid-template-columns: repeat(2, 1fr); } }
 .plates figure { margin: 0; overflow: hidden; }
-.shot { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top center;
+.shot { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top center;
   background: var(--sunken); border: 1px solid var(--rule); border-radius: 1px; cursor: zoom-in; transition: border-color .15s; }
 .shot:hover { border-color: var(--accent); }
 figcaption { font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-top: 7px; line-height: 1.45; }
