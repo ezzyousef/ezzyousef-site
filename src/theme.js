@@ -5,11 +5,10 @@ export const FONTS = {
   mono: ['IBM Plex Mono', 'JetBrains Mono', 'Space Mono', 'Roboto Mono'],
 };
 
-const WEIGHTS = {
-  display: 'wght@400;500;600',
-  body: 'wght@400;500;600;700',
-  mono: 'wght@400;500',
-};
+/** The fonts that ship with the site (src/fonts.css). Other names stay valid
+ *  in stored content so nothing breaks, but they render as the defaults:
+ *  no font is ever requested from a third-party service. */
+export const HOSTED_FONTS = { display: ['Newsreader'], body: ['Archivo'], mono: ['IBM Plex Mono'] };
 
 /** Fallbacks used when a stored theme value is not one we can trust. */
 const DEFAULTS = {
@@ -32,7 +31,7 @@ export function cleanTheme(t) {
   for (const k of ['accent', 'accentDark', 'ground', 'surface', 'ink', 'muted', 'hair']) {
     if (/^#[0-9a-f]{6}$/i.test(String(src[k]))) out[k] = src[k];
   }
-  for (const [k, list] of [['fontDisplay', FONTS.display], ['fontBody', FONTS.body], ['fontMono', FONTS.mono]]) {
+  for (const [k, list] of [['fontDisplay', HOSTED_FONTS.display], ['fontBody', HOSTED_FONTS.body], ['fontMono', HOSTED_FONTS.mono]]) {
     if (list.includes(src[k])) out[k] = src[k];
   }
   for (const [k, [lo, hi]] of Object.entries(RANGES)) {
@@ -40,19 +39,6 @@ export function cleanTheme(t) {
     if (typeof n === 'number' && Number.isFinite(n)) out[k] = Math.min(hi, Math.max(lo, n));
   }
   return out;
-}
-
-export function fontHref(input) {
-  const theme = cleanTheme(input);
-  const fams = [
-    [theme.fontDisplay, WEIGHTS.display],
-    [theme.fontBody, WEIGHTS.body],
-    [theme.fontMono, WEIGHTS.mono],
-  ]
-    .filter(([name]) => name)
-    .map(([name, w]) => `family=${encodeURIComponent(name).replace(/%20/g, '+')}:${w}`)
-    .join('&');
-  return `https://fonts.googleapis.com/css2?${fams}&display=swap`;
 }
 
 export function shift(hex, amount) {
@@ -141,7 +127,11 @@ body {
   font-size: ${t.baseSize}px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
 }
+h1, h2, h3 { text-wrap: balance; }
+p, .pub-t, .col-t { text-wrap: pretty; }
+.facts-line, .pub::before, .rail-num, .pub-m, figcaption { font-variant-numeric: tabular-nums lining-nums; }
 img { max-width: 100%; display: block; }
 picture { display: block; }
 a { color: var(--ink); text-decoration-color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
@@ -155,11 +145,6 @@ a:hover { color: var(--accent); }
   padding: 10px 18px; z-index: 100; font-family: var(--mono); font-size: 13px; text-decoration: none; }
 .skip:focus { left: 8px; top: 8px; }
 
-
-/* the pointer tilt on screenshots, figures and project blocks */
-.tilt { transition: transform .12s ease-out, border-color .2s; }
-
-@media (prefers-reduced-motion: reduce) { .tilt { transition: border-color .2s; } }
 
 /* ---------------------------------------------------------------- shell */
 .page { max-width: var(--max); margin: 0 auto; padding-inline: var(--pad); }

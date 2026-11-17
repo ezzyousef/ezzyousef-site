@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { css, fontHref } from '../../src/theme.js';
+import { css, HOSTED_FONTS } from '../../src/theme.js';
 
 const seed = JSON.parse(readFileSync('data/seed.json', 'utf8'));
 
@@ -22,10 +22,13 @@ describe('theme stylesheet', () => {
     const sheet = css(seed.theme);
     expect(sheet).toContain(`--accent: ${seed.theme.accent}`);
     expect(sheet).toContain('"Newsreader"');
-    expect(fontHref(seed.theme)).toMatch(/^https:\/\/fonts\.googleapis\.com\/css2\?family=Newsreader/);
   });
 
-  it('only asks Google Fonts for fonts on the offered list', () => {
-    expect(fontHref({ ...seed.theme, fontBody: 'Evil&x=1' })).not.toContain('Evil');
+  it('uses only fonts that ship with the site, never a font service', () => {
+    const sheet = css({ ...seed.theme, fontBody: 'Karla', fontDisplay: 'Evil&x=1' });
+    expect(sheet).toContain('"Archivo"');
+    expect(sheet).toContain('"Newsreader"');
+    expect(sheet).not.toMatch(/Karla|Evil|googleapis/);
+    expect(HOSTED_FONTS.display).toEqual(['Newsreader']);
   });
 });

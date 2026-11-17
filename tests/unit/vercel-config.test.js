@@ -36,10 +36,10 @@ describe('security headers', () => {
     expect(p['script-src']).not.toContain('*');
   });
 
-  it('lets the page reach only what it uses: fonts and the metadata services', () => {
+  it('lets the page reach only what it uses: self-hosted fonts and the metadata services', () => {
     const p = csp();
-    expect(p['font-src']).toContain('https://fonts.gstatic.com');
-    expect(p['style-src']).toContain('https://fonts.googleapis.com');
+    expect(p['font-src']).toEqual(["'self'"]);
+    expect(p['style-src']).not.toContain('https://fonts.googleapis.com');
     expect(p['connect-src']).toEqual(["'self'", 'https://api.crossref.org', 'https://pub.orcid.org']);
   });
 

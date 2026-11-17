@@ -2,7 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react
 import seed from './content.generated.json';
 import { api } from './lib/api.js';
 import { loadContent } from './lib/merge.js';
-import { css, fontHref } from './theme.js';
+import { css } from './theme.js';
 import Site from './site/Site.jsx';
 import ProjectPage from './site/ProjectPage.jsx';
 import { projectSlugs, slugFromPath } from './lib/slug.js';
@@ -60,7 +60,6 @@ export default function App() {
 
   const theme = content.theme || seed.theme;
   const sheet = useMemo(() => css(theme), [theme]);
-  const fonts = useMemo(() => fontHref(theme), [theme]);
 
   useEffect(() => {
     let el = document.getElementById('theme-css');
@@ -71,17 +70,6 @@ export default function App() {
     }
     el.textContent = sheet;
   }, [sheet]);
-
-  useEffect(() => {
-    let link = document.getElementById('theme-fonts');
-    if (!link) {
-      link = document.createElement('link');
-      link.id = 'theme-fonts';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    }
-    if (link.href !== fonts) link.href = fonts;
-  }, [fonts]);
 
   const slug = slugFromPath(window.location.pathname);
   const projectIndex = slug ? projectSlugs(content.software.projects).indexOf(slug) : -1;

@@ -225,7 +225,7 @@ async function main() {
       // reduced motion: hovering a card must not transform it
       const card = page.locator('article.proj').first();
       await card.hover({ position: { x: 30, y: 30 } });
-      checks.noTiltWithReducedMotion = (await card.evaluate((el) => el.style.transform)) === '';
+      checks.cardDoesNotTilt = (await card.evaluate((el) => el.style.transform)) === '';
 
       // publication search and the BibTeX download
       const total = await page.locator('li.pub').count();
@@ -264,6 +264,7 @@ async function main() {
       checks.checksTabShowsProblems = (await page.locator('h2', { hasText: 'Problems' }).count()) === 1;
       await page.click('.ad-nav >> text=History & backup');
       await page.click('text=Show earlier versions');
+      await page.waitForSelector('text=Load this version', { timeout: 3000 });
       checks.historyListsVersions = (await page.locator('text=Load this version').count()) === 1;
       await page.click('.ad-nav >> text=Publications');
       const unnamed = await page.evaluate(() => [...document.querySelectorAll('.ad-shell button')]

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
-import { FONTS } from '../theme.js';
+import { HOSTED_FONTS as FONTS } from '../theme.js';
 import { checkContent } from '../lib/a11y-check.js';
 import { validate, PROJECT_STATUSES } from '../lib/content-schema.js';
 import { lookupDoi, lookupOrcidDois, diffPub, applyFields, missingDois, isOrcid } from '../lib/crossref.js';

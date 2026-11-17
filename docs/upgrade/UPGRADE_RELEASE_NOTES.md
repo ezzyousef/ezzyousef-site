@@ -15,4 +15,11 @@
 - Project pages, 404, sitemap, robots, canonical tags, publication search, BibTeX export, keyboard-reachable image viewer.
 
 ## Design pass (fonts and style)
-Not done. The pass needs self-hosted fonts (`@fontsource` packages), and the install command was refused by the permission system in this session. Existing choices already avoid the template look: Newsreader (serif headings), Archivo (text), IBM Plex Mono (labels), a warm off-white ground, one red accent, 2px radius, hairline rules, no gradients. Before/after screenshots and a font/palette change are therefore not included; current screenshots are in docs/upgrade/screenshots.
+Kept the existing identity (serif headings, grotesk text, mono labels, warm off-white ground, one red accent, 2px radius, hairline rules, no gradients, no cards/shadows) and removed the remaining tells.
+- Fonts (self-hosted via @fontsource, no request to any font service): Newsreader (headings, with italic), Archivo (text), IBM Plex Mono 400/500 (labels and figures).
+- Palette (unchanged, light): ground #FCFBF8, ink #1A1A18, accent #A32617, muted #27406B, hairline #D7DAE2; dark values derive from these. All pairs pass the dashboard contrast check (4.5:1).
+- Type details: balanced headings, `text-wrap: pretty` paragraphs, kerning, tabular lining figures for counters, dates and captions.
+- Removed the pointer-follow 3D tilt on cards and figures (excessive hover motion).
+- Google Fonts preconnects and the Google hosts in the Content-Security-Policy are gone; font-src is 'self'.
+- Behaviour change: a font name other than these three, stored in old content, renders as the default; the dashboard picker offers only the shipped fonts.
+- Screenshots: docs/design/before-{1440,390}-{top,full}.jpg and after-*. The "before" images were taken offline, so they show system fallback fonts instead of the Google fonts the live site loaded.

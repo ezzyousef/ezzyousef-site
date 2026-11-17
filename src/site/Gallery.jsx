@@ -7,23 +7,6 @@ export const reducedMotion = () =>
   typeof window !== 'undefined' && !!window.matchMedia &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** A small pointer-follow tilt on screenshots, figures and project blocks.
- *  Does nothing when the viewer asks for reduced motion. */
-export function tilt(max = 5, lift = 4) {
-  return {
-    onMouseMove: (e) => {
-      if (reducedMotion()) return;
-      const el = e.currentTarget;
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - 0.5;
-      const y = (e.clientY - r.top) / r.height - 0.5;
-      el.style.transform =
-        `perspective(900px) rotateX(${(-y * max).toFixed(2)}deg) rotateY(${(x * max).toFixed(2)}deg) translateY(-${lift}px)`;
-    },
-    onMouseLeave: (e) => { e.currentTarget.style.transform = ''; },
-  };
-}
-
 /**
  * An image that opens the viewer. It sits inside a real button, so it can be
  * reached with Tab and opened with Enter or Space; the image's caption is the
@@ -32,7 +15,7 @@ export function tilt(max = 5, lift = 4) {
 export function Zoomable({ item, group, index, onOpen, sizes, className }) {
   if (!item || !item.src) return null;
   return (
-    <figure className="tilt" {...tilt(6, 3)}>
+    <figure>
       <button type="button" className="zoom" onClick={() => onOpen(group, index)}>
         <Picture className={className} src={item.src} alt={item.cap || 'Image'} sizes={sizes} />
       </button>

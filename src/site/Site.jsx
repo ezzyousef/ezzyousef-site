@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Picture from './Picture.jsx';
-import { Zoomable, useGallery, tilt } from './Gallery.jsx';
+import { Zoomable, useGallery } from './Gallery.jsx';
 import { A, Linked, Rail, BackToTop, Footer, linkLabel } from './parts.jsx';
 import { citationText, toBibtex, matches, doiOf } from '../lib/citation.js';
 import { projectSlugs, projectPath, slugify } from '../lib/slug.js';
@@ -148,7 +148,7 @@ function ProjectCard({ pr, slug, onOpen }) {
   const status = statusLabel(pr.status);
   const dls = downloadsOf(pr);
   return (
-    <article className="proj tilt" {...tilt(3, 4)} aria-labelledby={`proj-${slug}`}>
+    <article className="proj" aria-labelledby={`proj-${slug}`}>
       <div className="band band-flush">
         <div className="rail" />
         <div>
