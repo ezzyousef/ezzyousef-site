@@ -55,7 +55,7 @@ export function fontHref(input) {
   return `https://fonts.googleapis.com/css2?${fams}&display=swap`;
 }
 
-function shift(hex, amount) {
+export function shift(hex, amount) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
   if (!m) return hex;
   const to = amount > 0 ? 255 : 0;
