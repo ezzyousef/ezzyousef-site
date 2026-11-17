@@ -4,7 +4,7 @@ Only checks actually run, on Windows 11, Node, local offline build.
 
 | Check | Command | Before (baseline) | After |
 |---|---|---|---|
-| Unit tests | `npx vitest run` | none existed | 16 files, 146 tests passed |
+| Unit tests | `npx vitest run` | none existed | 15 files, 146 tests passed |
 | Page QA (axe WCAG A/AA, overflow, links, CSP applied; 3 viewports plus dark) | `node tests/e2e/site-qa.mjs` | 9 problems | 22 page checks, 0 problems (includes the signed-in dashboard with the API mocked) |
 | HTML validity | `npx html-validate "dist/**/*.html"` | 3 errors | 0 errors |
 | Lint | `npx eslint .` | not configured | 0 errors |
