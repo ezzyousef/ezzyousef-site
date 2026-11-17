@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { jwtVerify, SignJWT } from 'jose';
 
 const ISSUER = 'ezzyousef-portfolio';
@@ -14,29 +15,49 @@ function secret() {
   return new TextEncoder().encode(s);
 }
 
-export async function signToken() {
-  return new SignJWT({ role: 'admin' })
+/** Renewals keep the original sign-in time; past this the password is needed again. */
+export const SESSION_MAX_SECONDS = 12 * 60 * 60;
+
+/** Tied to the password hash, so changing the password ends every session. */
+function sessionVersion() {
+  return createHash('sha256').update('sv:' + (process.env.ADMIN_PASSWORD_HASH || '')).digest('hex').slice(0, 16);
+}
+
+const nowSeconds = () => Math.floor(Date.now() / 1000);
+
+/** authTime: when the password was last entered (seconds). Defaults to now. */
+export async function signToken(authTime = nowSeconds()) {
+  const exp = Math.min(nowSeconds() + TOKEN_TTL_SECONDS, authTime + SESSION_MAX_SECONDS);
+  return new SignJWT({ role: 'admin', auth_time: authTime, sv: sessionVersion() })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
-    .setExpirationTime(`${TOKEN_TTL_SECONDS}s`)
+    .setExpirationTime(exp)
     .sign(secret());
 }
 
-/** Returns true when the request carries a valid admin token. */
-export async function isAdmin(req) {
+/** The verified claims, or null when the request carries no valid admin token. */
+export async function adminClaims(req) {
   const header = (req.headers && req.headers.authorization) || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!token) return false;
+  if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret(), {
       issuer: ISSUER, audience: AUDIENCE, algorithms: ['HS256'],
     });
-    return payload.role === 'admin';
+    if (payload.role !== 'admin') return null;
+    if (payload.sv !== sessionVersion()) return null;
+    if (typeof payload.auth_time !== 'number' || nowSeconds() - payload.auth_time > SESSION_MAX_SECONDS) return null;
+    return payload;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/** Returns true when the request carries a valid admin token. */
+export async function isAdmin(req) {
+  return !!(await adminClaims(req));
 }
 
 /**

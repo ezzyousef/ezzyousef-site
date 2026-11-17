@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
 import { HOSTED_FONTS as FONTS } from '../theme.js';
 import { checkContent } from '../lib/a11y-check.js';
-import { validate, PROJECT_STATUSES } from '../lib/content-schema.js';
+import { validate, migrate, PROJECT_STATUSES } from '../lib/content-schema.js';
+import { stillDirty, publishMessage, withLiveRevision } from '../lib/publish-state.js';
 import { lookupDoi, lookupOrcidDois, diffPub, applyFields, missingDois, isOrcid } from '../lib/crossref.js';
 import { doiOf } from '../lib/citation.js';
 import { parseBackup, backupName } from '../lib/backup.js';
@@ -257,13 +258,16 @@ export default function Admin({ content, setContent, onExit }) {
   const [review, setReview] = useState(null);
   const [lookup, setLookup] = useState({ doi: '', orcid: '', busy: false, missing: [] });
   const importRef = useRef(null);
+  const editRev = useRef(0);        // bumps on every edit, to tell what a save covered
+  const retryTimer = useRef(null);
 
   const notify = (msg, kind = 'ok') => {
     setNote({ msg, kind });
-    setTimeout(() => setNote(null), 4000);
+    setTimeout(() => setNote(null), kind === 'bad' ? 9000 : 5000);
   };
 
   const set = (path, value) => {
+    editRev.current += 1;
     setContent((c) => setPath(c, path, value));
     setDirty(true);
   };
@@ -305,15 +309,20 @@ export default function Admin({ content, setContent, onExit }) {
       if (warns.length && !confirm(`${warns.length} accessibility warning(s) in the Checks tab. Publish anyway?`)) return;
     }
     setSaving(true);
+    const submitted = editRev.current;
     try {
-      const r = await api.saveContent(token, content, stage);
+      const r = await api.saveContent(token, content, stage, content.revision || 0);
       if (stage === 'draft') {
         setDraftAt(r.savedAt);
         notify('Draft saved. The live site is unchanged.', 'ok');
       } else {
-        setDirty(false);
+        // The server numbered this publish; later edits must build on it.
+        setContent((c) => ({ ...c, revision: r.revision }));
+        setDirty(stillDirty(submitted, editRev.current));
         setVersions(null);
-        notify(r.rebuild === false ? 'Published. The site rebuild could not be started; try again shortly.' : 'Published. The live site is updated.', 'ok');
+        const m = publishMessage(r.rebuild);
+        notify(m.msg, m.kind);
+        if (m.retryMs) scheduleRebuildRetry(m.retryMs);
       }
     } catch (e) {
       const detail = e.problems && e.problems.length ? ` (${e.problems[0].path}: ${e.problems[0].message})` : '';
@@ -323,9 +332,28 @@ export default function Admin({ content, setContent, onExit }) {
     }
   }
 
+  function scheduleRebuildRetry(ms) {
+    clearTimeout(retryTimer.current);
+    retryTimer.current = setTimeout(async () => {
+      try {
+        const r = await api.rebuild(token);
+        const st = r.rebuild && r.rebuild.status;
+        if (st === 'requested') notify('The pending site rebuild was requested.', 'ok');
+        else if (st === 'pending') scheduleRebuildRetry(Math.max(5, Number(r.rebuild.retryAfter) || 60) * 1000);
+        else if (st === 'failed') notify(`The pending site rebuild failed (${r.rebuild.message}).`, 'bad');
+      } catch (e) { notify(`Could not retry the site rebuild: ${e.message}`, 'bad'); }
+    }, ms);
+  }
+
+  useEffect(() => () => clearTimeout(retryTimer.current), []);
+
   function load(next, label) {
+    const doc = migrate(next);
+    const problems = validate(doc);
+    if (problems.length) return notify(`${label} is not usable: ${problems[0].path}: ${problems[0].message}`, 'bad');
     if (dirty && !confirm('This replaces the edits on screen. Continue?')) return;
-    setContent(() => next);
+    editRev.current += 1;
+    setContent((c) => withLiveRevision(doc, c));
     setDirty(true);
     notify(`${label} loaded. Press Save draft or Publish to keep it.`, 'ok');
   }

@@ -1,11 +1,11 @@
 import bcrypt from 'bcryptjs';
-import { signToken, isAdmin, rateLimited, clientIp, TOKEN_TTL_SECONDS } from './_lib/auth.js';
+import { signToken, adminClaims, rateLimited, clientIp, TOKEN_TTL_SECONDS } from './_lib/auth.js';
 
 /**
  * POST { password }          -> { token, expiresIn }
  * POST { renew: true } with a valid Bearer token -> a fresh token, so a long
- * editing session never needs the password twice, while a stolen token still
- * runs out within two hours unless its holder keeps renewing it.
+ * editing session never needs the password twice, while a stolen token
+ * lasts at most two hours, and never past 12 hours from the real sign-in.
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -21,9 +21,10 @@ export default async function handler(req, res) {
     if (rateLimited('renew:' + ip, 30, 10 * 60 * 1000)) {
       return res.status(429).json({ error: 'Too many requests. Wait a few minutes.' });
     }
-    if (!(await isAdmin(req))) return res.status(401).json({ error: 'Sign in again.' });
+    const claims = await adminClaims(req);
+    if (!claims) return res.status(401).json({ error: 'Sign in again.' });
     try {
-      return res.status(200).json({ token: await signToken(), expiresIn: TOKEN_TTL_SECONDS });
+      return res.status(200).json({ token: await signToken(claims.auth_time), expiresIn: TOKEN_TTL_SECONDS });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }

@@ -81,3 +81,51 @@ describe('isAdmin', () => {
     expect(await lib.isAdmin(mockReq({ headers: { authorization: `Bearer ${none}` } }))).toBe(false);
   });
 });
+
+describe('sessions', () => {
+  const now = () => Math.floor(Date.now() / 1000);
+  const renew = async (auth, token) => {
+    const res = mockRes();
+    await auth(mockReq({ method: 'POST', headers: { authorization: `Bearer ${token}` }, body: { renew: true } }), res);
+    return res;
+  };
+
+  it('keeps the original sign-in time through renewals', async () => {
+    const { auth, lib } = await fresh();
+    const old = await lib.signToken(now() - 3600);
+    const res = await renew(auth, old);
+    expect(res.statusCode).toBe(200);
+    expect(decodeJwt(res.body.token).auth_time).toBe(decodeJwt(old).auth_time);
+  });
+
+  it('stops renewing after the absolute session lifetime, and rejects such tokens', async () => {
+    const { auth, lib } = await fresh();
+    expect(lib.SESSION_MAX_SECONDS).toBe(12 * 3600);
+    const tooOld = await lib.signToken(now() - 13 * 3600);
+    expect((await renew(auth, tooOld)).statusCode).toBe(401);
+    expect(await lib.isAdmin(mockReq({ headers: { authorization: `Bearer ${tooOld}` } }))).toBe(false);
+  });
+
+  it('never lets a token outlive the absolute deadline', async () => {
+    const { lib } = await fresh();
+    const t = decodeJwt(await lib.signToken(now() - 11.5 * 3600));
+    expect(t.exp).toBeLessThanOrEqual(t.auth_time + lib.SESSION_MAX_SECONDS);
+  });
+
+  it('ends every session when the password hash changes', async () => {
+    const { lib } = await fresh();
+    const token = await lib.signToken();
+    const req = mockReq({ headers: { authorization: `Bearer ${token}` } });
+    expect(await lib.isAdmin(req)).toBe(true);
+    process.env.ADMIN_PASSWORD_HASH = bcrypt.hashSync('a new password', 4);
+    expect(await lib.isAdmin(req)).toBe(false);
+  });
+
+  it('refuses tokens that carry no session information', async () => {
+    const { lib } = await fresh();
+    const key = new TextEncoder().encode(SECRET);
+    const legacy = await new SignJWT({ role: 'admin' }).setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt().setIssuer('ezzyousef-portfolio').setAudience('ezzyousef-dashboard').setExpirationTime('1h').sign(key);
+    expect(await lib.isAdmin(mockReq({ headers: { authorization: `Bearer ${legacy}` } }))).toBe(false);
+  });
+});

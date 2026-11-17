@@ -113,3 +113,33 @@ describe('doiFromUrl', () => {
     [undefined, ''],
   ])('%s -> %s', (u, d) => expect(doiFromUrl(u)).toBe(d));
 });
+
+describe('validate: structure', () => {
+  const bad = (mutate) => { const d = migrate(structuredClone(seed)); mutate(d); return validate(d); };
+  const at = (errs, path) => errs.some((e) => e.path === path || e.path.startsWith(path + '.'));
+
+  it('accepts the shipped document', () => {
+    expect(validate(migrate(seed))).toEqual([]);
+  });
+  it('rejects a list that is an object', () => {
+    expect(at(bad((d) => { d.research.paragraphs = {}; }), 'research.paragraphs')).toBe(true);
+  });
+  it('rejects null or non-object entries in a list of records', () => {
+    expect(at(bad((d) => { d.publications.items = [null]; }), 'publications.items.0')).toBe(true);
+    expect(at(bad((d) => { d.software.projects[0] = 'x'; }), 'software.projects.0')).toBe(true);
+  });
+  it('rejects the wrong type for a text or flag field', () => {
+    expect(at(bad((d) => { d.hero.name = 5; }), 'hero.name')).toBe(true);
+    expect(at(bad((d) => { d.hero.showAvailable = 'yes'; }), 'hero.showAvailable')).toBe(true);
+    expect(at(bad((d) => { d.software.projects[0].thumbs = [{ src: 1 }]; }), 'software.projects.0.thumbs.0.src')).toBe(true);
+    expect(at(bad((d) => { d.research.paragraphs = ['ok', 7]; }), 'research.paragraphs.1')).toBe(true);
+  });
+  it('rejects a section of the wrong kind and bad extra sections', () => {
+    expect(at(bad((d) => { d.blocks = [{ title: 'T', paragraphs: 'text' }]; }), 'blocks.0.paragraphs')).toBe(true);
+    expect(at(bad((d) => { d.profile = []; }), 'profile')).toBe(true);
+    expect(at(bad((d) => { d.stats = [1]; }), 'stats.0')).toBe(true);
+  });
+  it('still allows empty text and missing optional fields', () => {
+    expect(bad((d) => { d.hero.name = ''; delete d.hero.links; d.research.tags = []; })).toEqual([]);
+  });
+});

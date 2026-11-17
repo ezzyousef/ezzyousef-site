@@ -61,6 +61,52 @@ export function migrate(input) {
   return doc;
 }
 
+/**
+ * The shape every consumed field must have. 's' text, 'b' flag, 'n' number,
+ * [x] a list of x, {...} a record. A field may be missing or empty, but if it
+ * is there it must have the right type, so the page and the dashboard can
+ * never be handed something they cannot loop over or read.
+ */
+const LINK = { label: 's', url: 's', primary: 'b' };
+const IMG = { src: 's', cap: 's' };
+const SHAPE = {
+  schemaVersion: 'n', revision: 'n',
+  meta: { title: 's', description: 's' },
+  nav: [{ label: 's', href: 's' }],
+  profile: { orcid: 's', cvUrl: 's' },
+  hero: { available: 's', showAvailable: 'b', name: 's', role: 's', roleLinkText: 's', roleLinkUrl: 's', portrait: 's', links: [LINK] },
+  stats: [{ n: 's', label: 's' }],
+  research: { eyebrow: 's', heading: 's', paragraphs: ['s'], tags: ['s'], methods: [{ title: 's', text: 's' }], figuresNote: 's', figures: [IMG] },
+  publications: { eyebrow: 's', heading: 's', note: 's', noteLinkText: 's', noteLinkUrl: 's',
+    items: [{ title: 's', url: 's', authors: 's', me: 's', journal: 's', tags: ['s'], lead: 's', doi: 's', year: 's' }] },
+  software: { eyebrow: 's', heading: 's', intro: ['s'], shared: 's', sharedLinkText: 's', sharedLinkUrl: 's', sharedTail: 's',
+    projects: [{ name: 's', pills: ['s'], ghostPills: ['s'], desc: 's', featured: IMG, thumbs: [IMG], facts: [{ label: 's', text: 's' }], links: [LINK],
+      status: 's', platforms: ['s'], version: 's', channel: 's', license: 's', docsUrl: 's', changelogUrl: 's',
+      downloads: [{ label: 's', url: 's', platform: 's' }], detail: ['s'] }] },
+  experience: { eyebrow: 's', heading: 's', items: [{ when: 's', title: 's', where: 's', whereUrl: 's', whereTail: 's', text: 's' }] },
+  background: { eyebrow: 's', heading: 's', education: [{ when: 's', title: 's', where: 's', text: 's' }], awardsTitle: 's',
+    awards: [{ name: 's', year: 's' }], reviewTitle: 's', review: [{ name: 's', year: 's' }], leadershipTitle: 's', leadership: 's' },
+  contact: { eyebrow: 's', heading: 's', text: 's', links: [LINK], groupsTitle: 's', groups: [LINK] },
+  blocks: [{ id: 's', title: 's', eyebrow: 's', paragraphs: ['s'], links: [LINK] }],
+  footer: { left: 's', right: 's' },
+};
+const KIND = { s: 'text', b: 'true or false', n: 'a number' };
+
+function checkShape(v, spec, path, err) {
+  if (v === undefined) return;
+  if (typeof spec === 'string') {
+    const ok = spec === 's' ? typeof v === 'string' : spec === 'b' ? typeof v === 'boolean' : typeof v === 'number' && Number.isFinite(v);
+    if (!ok) err(path, `This must be ${KIND[spec]}.`);
+  } else if (Array.isArray(spec)) {
+    if (!Array.isArray(v)) return err(path, 'This must be a list.');
+    v.forEach((x, i) => checkShape(x, spec[0], `${path}.${i}`, err));
+  } else if (!isObj(v)) {
+    err(path, 'This must be a group of fields.');
+  } else {
+    for (const k of Object.keys(spec)) checkShape(v[k], spec[k], `${path}.${k}`, err);
+  }
+}
+
 const COLOUR_KEYS = ['accent', 'accentDark', 'ground', 'surface', 'ink', 'muted', 'hair'];
 const SIZES = { baseSize: [12, 24], heroSize: [28, 120], headingSize: [18, 72], radius: [0, 40] };
 const SECTIONS = ['theme', 'meta', 'hero', 'research', 'publications', 'software', 'experience', 'background', 'contact', 'footer'];
@@ -77,6 +123,7 @@ export function validate(doc) {
   if (!isObj(doc)) return [{ path: '', message: 'Content must be an object.' }];
 
   for (const s of SECTIONS) if (!isObj(doc[s])) err(s, `The "${s}" section is missing.`);
+  for (const k of Object.keys(SHAPE)) checkShape(doc[k], SHAPE[k], k, err);
   if (doc.nav !== undefined && !Array.isArray(doc.nav)) err('nav', 'Navigation must be a list.');
 
   const t = isObj(doc.theme) ? doc.theme : {};
