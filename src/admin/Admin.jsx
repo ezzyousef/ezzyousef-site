@@ -178,7 +178,7 @@ function ImagePick({ value, onChange, token, onNotify }) {
           </button>
           {value && <button type="button" className="ad-btn ghost" onClick={() => onChange('')}>Clear</button>}
         </div>
-        <input ref={inputRef} type="file" accept="image/*" hidden onChange={pick} />
+        <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={pick} />
       </div>
     </div>
   );
