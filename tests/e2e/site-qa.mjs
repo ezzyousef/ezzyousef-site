@@ -196,9 +196,18 @@ async function main() {
       await page.route('**/*', (r) => {
         const u = new URL(r.request().url());
         if (u.hostname !== '127.0.0.1') return r.abort();
+        if (u.pathname === '/api/auth') return r.fulfill({ status: 200, contentType: 'application/json', body: '{"token":"t","expiresIn":7200}' });
+        if (u.pathname === '/api/content' && r.request().method() === 'POST') {
+          apiPosts.push(JSON.parse(r.request().postData()).stage);
+          return r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true,"savedAt":"2026-01-01T00:00:00Z"}' });
+        }
+        if (u.pathname === '/api/content' && u.search.includes('history')) {
+          return r.fulfill({ status: 200, contentType: 'application/json', body: '{"versions":[{"id":"history/a.json","savedAt":"2026-01-01T00:00:00Z","size":2048}]}' });
+        }
         if (u.pathname.startsWith('/api/')) return r.fulfill({ status: 404, body: '{}' });
         return r.continue();
       });
+      const apiPosts = [];
       await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
       const checks = {};
 
@@ -243,6 +252,27 @@ async function main() {
       const adminAxe = await page.evaluate(async (tags) =>
         (await window.axe.run(document.querySelector('.ad-login-wrap'), { runOnly: { type: 'tag', values: tags }, preload: false })).violations.map((v) => v.id), AXE_TAGS);
       checks.adminLoginAccessible = adminAxe.length === 0 || adminAxe;
+
+      // signed-in dashboard (API mocked): draft vs publish, Checks and History tabs, accessible names
+      await page.fill('input[type=password]', 'x');
+      await page.click('button.primary');
+      await page.waitForSelector('.ad-shell', { timeout: 5000 });
+      await page.click('text=Save draft');
+      await page.waitForSelector('.ad-note.ok');
+      checks.draftSavesAsDraft = apiPosts.join() === 'draft';
+      await page.click('.ad-nav >> text=Checks');
+      checks.checksTabShowsProblems = (await page.locator('h2', { hasText: 'Problems' }).count()) === 1;
+      await page.click('.ad-nav >> text=History & backup');
+      await page.click('text=Show earlier versions');
+      checks.historyListsVersions = (await page.locator('text=Load this version').count()) === 1;
+      await page.click('.ad-nav >> text=Publications');
+      const unnamed = await page.evaluate(() => [...document.querySelectorAll('.ad-shell button')]
+        .filter((b) => !(b.textContent || '').trim() && !b.getAttribute('aria-label')).length);
+      checks.dashboardButtonsNamed = unnamed === 0 || unnamed;
+      await page.evaluate(axeSource);
+      const shellAxe = await page.evaluate(async (tags) =>
+        (await window.axe.run(document.querySelector('.ad-shell'), { runOnly: { type: 'tag', values: tags }, preload: false })).violations.map((v) => v.id + ' ' + v.nodes.slice(0, 3).map((n) => n.target.join(' ') + ' ' + ((n.any[0] || {}).message || '')).join(' | ')), AXE_TAGS);
+      checks.dashboardAccessible = shellAxe.length === 0 || shellAxe;
 
       results.push({ viewport: 'desktop-1366', route: 'interactions', interactions: checks });
       await ctx.close();
