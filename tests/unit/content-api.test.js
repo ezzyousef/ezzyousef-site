@@ -33,7 +33,7 @@ vi.mock('@vercel/blob', () => ({
 }));
 
 const hookCalls = [];
-globalThis.fetch = vi.fn(async (url, init = {}) => {
+globalThis.fetch = vi.fn(async (url) => {
   if (String(url).startsWith('https://hooks.example')) { hookCalls.push(url); return new Response('{}'); }
   const b = [...store.values()].find((x) => x.url === url);
   return b ? new Response(b.body, { status: 200 }) : new Response('not found', { status: 404 });

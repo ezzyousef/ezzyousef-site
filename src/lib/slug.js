@@ -1,7 +1,7 @@
 /** URL-safe name: "FTIR & XRD Toolkit" -> "ftir-xrd-toolkit". */
 export function slugify(s) {
   return String(s || '')
-    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .normalize('NFKD').replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

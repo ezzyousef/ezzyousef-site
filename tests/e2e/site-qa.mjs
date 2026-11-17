@@ -78,9 +78,13 @@ async function startPreview() {
 }
 
 async function axeRun(page, axeSource) {
-  await page.addScriptTag({ content: axeSource });
+  // Evaluated through the DevTools protocol rather than as a <script> tag,
+  // so the page's own Content-Security-Policy stays in force.
+  await page.evaluate(axeSource);
   return page.evaluate(async (tags) => {
-    const r = await window.axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] });
+    // preload: false stops axe fetching cross-origin stylesheets itself,
+    // which the CSP (correctly) refuses and which would leave this PC.
+    const r = await window.axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'], preload: false });
     return r.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, sample: v.nodes[0] && v.nodes[0].target.join(' ') }));
   }, AXE_TAGS);
 }
@@ -185,6 +189,65 @@ async function main() {
       }
     }
 
+    // Interactions on the hydrated page.
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1366, height: 900 }, reducedMotion: 'reduce' });
+      const page = await ctx.newPage();
+      await page.route('**/*', (r) => {
+        const u = new URL(r.request().url());
+        if (u.hostname !== '127.0.0.1') return r.abort();
+        if (u.pathname.startsWith('/api/')) return r.fulfill({ status: 404, body: '{}' });
+        return r.continue();
+      });
+      await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+      const checks = {};
+
+      // keyboard: focus the first zoomable image, open with Enter, close with Escape
+      const zoom = page.locator('button.zoom').first();
+      await zoom.focus();
+      await page.keyboard.press('Enter');
+      checks.viewerOpensWithEnter = await page.evaluate(() => document.querySelector('dialog.lb').open);
+      await page.keyboard.press('ArrowRight');
+      checks.viewerArrowSteps = (await page.locator('.lb-count').textContent()).startsWith('2 /');
+      await page.keyboard.press('Escape');
+      checks.viewerClosesWithEscape = await page.evaluate(() => !document.querySelector('dialog.lb').open);
+      checks.focusReturns = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('zoom'));
+
+      // reduced motion: hovering a card must not transform it
+      const card = page.locator('article.proj').first();
+      await card.hover({ position: { x: 30, y: 30 } });
+      checks.noTiltWithReducedMotion = (await card.evaluate((el) => el.style.transform)) === '';
+
+      // publication search and the BibTeX download
+      const total = await page.locator('li.pub').count();
+      await page.fill('input[type=search]', 'Separations');
+      checks.searchFilters = (await page.locator('li.pub').count()) === 2 && total > 2;
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('button.bib')]);
+      const bib = await (await dl.createReadStream()).toArray();
+      checks.bibtexDownloads = Buffer.concat(bib).toString('utf8').match(/@article\{/g).length === 2;
+
+      // project page hydrates with its own content
+      await page.goto(`${BASE}/software/supercap-suite/`, { waitUntil: 'networkidle' });
+      checks.projectPageHydrates = (await page.locator('h1').textContent()) === 'Supercap Suite' &&
+        (await page.title()).startsWith('Supercap Suite');
+
+      // dashboard is not downloaded until #admin is opened
+      const scripts = [];
+      page.on('request', (r) => { if (r.url().includes('/_app/')) scripts.push(r.url()); });
+      await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+      checks.adminNotLoadedForVisitors = !scripts.some((u) => /Admin-/.test(u));
+      await page.goto(`${BASE}/#admin`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.ad-login', { timeout: 5000 });
+      checks.adminLoadsOnDemand = scripts.some((u) => /Admin-/.test(u));
+      await page.evaluate(axeSource);
+      const adminAxe = await page.evaluate(async (tags) =>
+        (await window.axe.run(document.querySelector('.ad-login-wrap'), { runOnly: { type: 'tag', values: tags }, preload: false })).violations.map((v) => v.id), AXE_TAGS);
+      checks.adminLoginAccessible = adminAxe.length === 0 || adminAxe;
+
+      results.push({ viewport: 'desktop-1366', route: 'interactions', interactions: checks });
+      await ctx.close();
+    }
+
     // The not-found page: present, accessible, links home, fits at 360 px.
     {
       const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } });
@@ -209,6 +272,14 @@ async function main() {
 
   let problems = 0;
   for (const r of results) {
+    if (r.interactions) {
+      for (const [name, ok] of Object.entries(r.interactions)) {
+        const bad = ok !== true;
+        problems += bad ? 1 : 0;
+        console.log(`${bad ? 'FAIL' : 'ok  '} interaction ${name}${bad ? ' ' + JSON.stringify(ok) : ''}`);
+      }
+      continue;
+    }
     if (r.notFound) {
       const bad = !r.notFound.ok;
       problems += bad ? 1 : 0;

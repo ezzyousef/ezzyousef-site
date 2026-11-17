@@ -10,7 +10,7 @@ export function isSafeUrl(url) {
   // Browsers ignore control characters and leading spaces when they read a
   // scheme, so "java\tscript:" and " javascript:" must be judged as stripped.
   // eslint-disable-next-line no-control-regex
-  const u = url.replace(/[\u0000- \u007f-\u009f]/g, '');
+  const u = url.replace(/[\x00-\x20\x7f-\x9f]/g, '');
   if (!u) return false;
   if (u.startsWith('#')) return true;
   if (u.startsWith('/') && !u.startsWith('//') && !u.startsWith('/\\')) return true;
