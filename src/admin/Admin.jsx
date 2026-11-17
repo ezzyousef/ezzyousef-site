@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
-import { FONTS } from '../theme.js';
+import { HOSTED_FONTS as FONTS } from '../theme.js';
+import { checkContent } from '../lib/a11y-check.js';
+import { validate, migrate, PROJECT_STATUSES } from '../lib/content-schema.js';
+import { stillDirty, publishMessage, withLiveRevision } from '../lib/publish-state.js';
+import { lookupDoi, lookupOrcidDois, diffPub, applyFields, missingDois, isOrcid } from '../lib/crossref.js';
+import { doiOf } from '../lib/citation.js';
+import { parseBackup, backupName } from '../lib/backup.js';
 import { PANEL_CSS } from './panel-css.js';
 
 /* ------------------------------------------------------------------ utils */
@@ -15,10 +21,6 @@ function setPath(obj, path, value) {
   }
   cur[path[path.length - 1]] = value;
   return next;
-}
-
-function getPath(obj, path) {
-  return path.reduce((o, k) => (o == null ? o : o[k]), obj);
 }
 
 function move(arr, from, to) {
@@ -84,11 +86,11 @@ function Rows({ items, onChange, render, blank, addLabel = 'Add' }) {
       {list.map((item, i) => (
         <div className="ad-row" key={i}>
           <div className="ad-row-tools">
-            <button type="button" title="Move up" disabled={i === 0}
+            <button type="button" title="Move up" aria-label={`Move entry ${i + 1} up`} disabled={i === 0}
                     onClick={() => onChange(move(list, i, i - 1))}>↑</button>
-            <button type="button" title="Move down" disabled={i === list.length - 1}
+            <button type="button" title="Move down" aria-label={`Move entry ${i + 1} down`} disabled={i === list.length - 1}
                     onClick={() => onChange(move(list, i, i + 1))}>↓</button>
-            <button type="button" className="ad-del" title="Delete"
+            <button type="button" className="ad-del" title="Delete" aria-label={`Delete entry ${i + 1}`}
                     onClick={() => { if (confirm('Delete this entry?')) onChange(list.filter((_, j) => j !== i)); }}>×</button>
           </div>
           <div className="ad-row-body">
@@ -110,9 +112,9 @@ function StringList({ items, onChange, placeholder }) {
       {list.map((v, i) => (
         <div className="ad-row ad-row-slim" key={i}>
           <div className="ad-row-tools">
-            <button type="button" disabled={i === 0} onClick={() => onChange(move(list, i, i - 1))}>↑</button>
-            <button type="button" disabled={i === list.length - 1} onClick={() => onChange(move(list, i, i + 1))}>↓</button>
-            <button type="button" className="ad-del" onClick={() => onChange(list.filter((_, j) => j !== i))}>×</button>
+            <button type="button" aria-label={`Move item ${i + 1} up`} disabled={i === 0} onClick={() => onChange(move(list, i, i - 1))}>↑</button>
+            <button type="button" aria-label={`Move item ${i + 1} down`} disabled={i === list.length - 1} onClick={() => onChange(move(list, i, i + 1))}>↓</button>
+            <button type="button" className="ad-del" aria-label={`Delete item ${i + 1}`} onClick={() => onChange(list.filter((_, j) => j !== i))}>×</button>
           </div>
           <input className="ad-input" value={v} placeholder={placeholder}
                  onChange={(e) => onChange(list.map((x, j) => (j === i ? e.target.value : x)))} />
@@ -130,9 +132,9 @@ function ParaList({ items, onChange }) {
       {list.map((v, i) => (
         <div className="ad-row" key={i}>
           <div className="ad-row-tools">
-            <button type="button" disabled={i === 0} onClick={() => onChange(move(list, i, i - 1))}>↑</button>
-            <button type="button" disabled={i === list.length - 1} onClick={() => onChange(move(list, i, i + 1))}>↓</button>
-            <button type="button" className="ad-del" onClick={() => onChange(list.filter((_, j) => j !== i))}>×</button>
+            <button type="button" aria-label={`Move item ${i + 1} up`} disabled={i === 0} onClick={() => onChange(move(list, i, i - 1))}>↑</button>
+            <button type="button" aria-label={`Move item ${i + 1} down`} disabled={i === list.length - 1} onClick={() => onChange(move(list, i, i + 1))}>↓</button>
+            <button type="button" className="ad-del" aria-label={`Delete item ${i + 1}`} onClick={() => onChange(list.filter((_, j) => j !== i))}>×</button>
           </div>
           <div className="ad-row-body">
             <textarea className="ad-input ad-area" rows={4} value={v}
@@ -178,7 +180,7 @@ function ImagePick({ value, onChange, token, onNotify }) {
           </button>
           {value && <button type="button" className="ad-btn ghost" onClick={() => onChange('')}>Clear</button>}
         </div>
-        <input ref={inputRef} type="file" accept="image/*" hidden onChange={pick} />
+        <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={pick} />
       </div>
     </div>
   );
@@ -210,7 +212,7 @@ function Login({ onToken, onExit }) {
       <form className="ad-login" onSubmit={submit}>
         <h2>Dashboard</h2>
         <p>Sign in to edit the site.</p>
-        <input className="ad-input" type="password" autoFocus value={pw} placeholder="Password"
+        <input className="ad-input" type="password" aria-label="Password" autoFocus value={pw} placeholder="Password"
                onChange={(e) => setPw(e.target.value)} />
         {err && <p className="ad-err">{err}</p>}
         <div className="ad-login-btns">
@@ -236,7 +238,13 @@ const SECTIONS = [
   ['contact', 'Contact'],
   ['nav', 'Navigation'],
   ['meta', 'Page & footer'],
+  ['blocks', 'Extra sections'],
+  ['checks', 'Checks'],
+  ['history', 'History & backup'],
 ];
+
+const RENEW_EVERY_MS = 20 * 60 * 1000;
+const fmt = (iso) => (iso ? new Date(iso).toLocaleString() : 'never');
 
 export default function Admin({ content, setContent, onExit }) {
   const [token, setToken] = useState('');
@@ -245,17 +253,24 @@ export default function Admin({ content, setContent, onExit }) {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [versions, setVersions] = useState(null);
+  const [draftAt, setDraftAt] = useState(null);
+  const [review, setReview] = useState(null);
+  const [lookup, setLookup] = useState({ doi: '', orcid: '', busy: false, missing: [] });
+  const importRef = useRef(null);
+  const editRev = useRef(0);        // bumps on every edit, to tell what a save covered
+  const retryTimer = useRef(null);
 
   const notify = (msg, kind = 'ok') => {
     setNote({ msg, kind });
-    setTimeout(() => setNote(null), 4000);
+    setTimeout(() => setNote(null), kind === 'bad' ? 9000 : 5000);
   };
 
   const set = (path, value) => {
+    editRev.current += 1;
     setContent((c) => setPath(c, path, value));
     setDirty(true);
   };
-  const get = (path) => getPath(content, path);
 
   useEffect(() => {
     const warn = (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
@@ -269,17 +284,146 @@ export default function Admin({ content, setContent, onExit }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [hidden]);
 
-  async function save() {
+  useEffect(() => {
+    if (!token) return undefined;
+    const id = setInterval(async () => {
+      try {
+        const r = await api.renew(token);
+        setToken(r.token);
+      } catch {
+        setToken('');
+      }
+    }, RENEW_EVERY_MS);
+    return () => clearInterval(id);
+  }, [token]);
+
+  async function save(stage) {
+    if (stage === 'publish') {
+      const problems = validate(content);
+      if (problems.length) {
+        notify(`Fix first: ${problems[0].path}: ${problems[0].message}`, 'bad');
+        setTab('checks');
+        return;
+      }
+      const warns = checkContent(content).filter((c) => c.level === 'warn');
+      if (warns.length && !confirm(`${warns.length} accessibility warning(s) in the Checks tab. Publish anyway?`)) return;
+    }
     setSaving(true);
+    const submitted = editRev.current;
     try {
-      await api.saveContent(token, content);
-      setDirty(false);
-      notify('Saved. The live site is updated.', 'ok');
+      const r = await api.saveContent(token, content, stage, content.revision || 0);
+      if (stage === 'draft') {
+        setDraftAt(r.savedAt);
+        notify('Draft saved. The live site is unchanged.', 'ok');
+      } else {
+        // The server numbered this publish; later edits must build on it.
+        setContent((c) => ({ ...c, revision: r.revision }));
+        setDirty(stillDirty(submitted, editRev.current));
+        setVersions(null);
+        const m = publishMessage(r.rebuild);
+        notify(m.msg, m.kind);
+        if (m.retryMs) scheduleRebuildRetry(m.retryMs);
+      }
     } catch (e) {
-      notify(e.message, 'bad');
+      const detail = e.problems && e.problems.length ? ` (${e.problems[0].path}: ${e.problems[0].message})` : '';
+      notify(e.message + detail, 'bad');
     } finally {
       setSaving(false);
     }
+  }
+
+  function scheduleRebuildRetry(ms) {
+    clearTimeout(retryTimer.current);
+    retryTimer.current = setTimeout(async () => {
+      try {
+        const r = await api.rebuild(token);
+        const st = r.rebuild && r.rebuild.status;
+        if (st === 'requested') notify('The pending site rebuild was requested.', 'ok');
+        else if (st === 'pending') scheduleRebuildRetry(Math.max(5, Number(r.rebuild.retryAfter) || 60) * 1000);
+        else if (st === 'failed') notify(`The pending site rebuild failed (${r.rebuild.message}).`, 'bad');
+      } catch (e) { notify(`Could not retry the site rebuild: ${e.message}`, 'bad'); }
+    }, ms);
+  }
+
+  useEffect(() => () => clearTimeout(retryTimer.current), []);
+
+  function load(next, label) {
+    const doc = migrate(next);
+    const problems = validate(doc);
+    if (problems.length) return notify(`${label} is not usable: ${problems[0].path}: ${problems[0].message}`, 'bad');
+    if (dirty && !confirm('This replaces the edits on screen. Continue?')) return;
+    editRev.current += 1;
+    setContent((c) => withLiveRevision(doc, c));
+    setDirty(true);
+    notify(`${label} loaded. Press Save draft or Publish to keep it.`, 'ok');
+  }
+
+  async function loadDraft() {
+    try {
+      const r = await api.getDraft(token);
+      if (!r.draft) return notify('There is no saved draft.', 'bad');
+      load(r.draft, 'Draft');
+    } catch (e) { notify(e.message, 'bad'); }
+  }
+
+  async function loadHistory() {
+    try { setVersions((await api.getHistory(token)).versions); } catch (e) { notify(e.message, 'bad'); }
+  }
+
+  async function loadVersion(v) {
+    try { load((await api.getVersion(token, v.id)).content, `Version of ${fmt(v.savedAt)}`); } catch (e) { notify(e.message, 'bad'); }
+  }
+
+  function exportJson() {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = backupName();
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importJson(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const r = parseBackup(await file.text());
+    if (r.error) return notify(r.error, 'bad');
+    load(r.content, 'Imported file');
+  }
+
+  const papers = (content.publications && content.publications.items) || [];
+
+  async function findDoi() {
+    setLookup((l) => ({ ...l, busy: true }));
+    try {
+      const proposed = await lookupDoi(lookup.doi);
+      const idx = papers.findIndex((p) => doiOf(p).toLowerCase() === proposed.doi.toLowerCase());
+      const current = idx >= 0 ? papers[idx] : null;
+      setReview({ idx, proposed, diffs: diffPub(current, proposed), ticked: [] });
+    } catch (err) { notify(err.message, 'bad'); }
+    setLookup((l) => ({ ...l, busy: false }));
+  }
+
+  async function importOrcid() {
+    const id = (lookup.orcid || (content.profile && content.profile.orcid) || '').trim();
+    if (!isOrcid(id)) return notify('Enter a valid ORCID iD (0000-0000-0000-0000).', 'bad');
+    setLookup((l) => ({ ...l, busy: true }));
+    try {
+      const missing = missingDois(await lookupOrcidDois(id), papers, doiOf);
+      setLookup((l) => ({ ...l, missing }));
+      notify(missing.length ? `${missing.length} DOI(s) on ORCID are not on the page. Look each up to review it.` : 'Every DOI on that ORCID record is already listed.', 'ok');
+    } catch (err) { notify(err.message, 'bad'); }
+    setLookup((l) => ({ ...l, busy: false }));
+  }
+
+  function acceptReview() {
+    const { idx, proposed, ticked } = review;
+    const base = idx >= 0 ? papers[idx] : { title: '', url: '', authors: '', me: 'E. Yousef', journal: '', tags: [], lead: '' };
+    const next = applyFields(base, proposed, ticked);
+    set(['publications', 'items'], idx >= 0 ? papers.map((p, i) => (i === idx ? next : p)) : [...papers, next]);
+    setReview(null);
+    notify('Applied the ticked fields. Check the paper, then save.', 'ok');
   }
 
   if (!token) {
@@ -310,7 +454,7 @@ export default function Admin({ content, setContent, onExit }) {
           <div className="ad-brand">Dashboard</div>
           <nav className="ad-nav">
             {SECTIONS.map(([key, label]) => (
-              <button key={key} className={tab === key ? 'on' : ''} onClick={() => setTab(key)}>{label}</button>
+              <button key={key} className={tab === key ? 'on' : ''} aria-current={tab === key ? 'page' : undefined} onClick={() => setTab(key)}>{label}</button>
             ))}
           </nav>
           <div className="ad-side-foot">
@@ -330,18 +474,21 @@ export default function Admin({ content, setContent, onExit }) {
             <span className="ad-state" title="Version of the site you are running">
               build {typeof __BUILD__ === 'string' ? __BUILD__ : '?'}
             </span>
-            <button className="ad-btn primary" disabled={!dirty || saving} onClick={save}>
-              {saving ? 'Saving…' : 'Save'}
+            <button className="ad-btn" disabled={saving} onClick={() => save('draft')}>
+              {saving ? 'Saving…' : 'Save draft'}
+            </button>
+            <button className="ad-btn primary" disabled={saving} onClick={() => save('publish')}>
+              Publish
             </button>
           </header>
 
-          {note && <div className={'ad-note ' + note.kind}>{note.msg}</div>}
+          {note && <div role="status" className={'ad-note ' + note.kind}>{note.msg}</div>}
 
           <div className="ad-body">
 
             {tab === 'theme' && (
               <>
-                <p className="ad-help">Changes show on the page behind this panel straight away. Nothing is public until you press Save.</p>
+                <p className="ad-help">Changes show on the page behind this panel straight away. Nothing is public until you press Publish.</p>
                 <div className="ad-grid">
                   <Field label="Accent colour" hint="light mode"><Colour value={t.accent} onChange={(v) => set(['theme', 'accent'], v)} /></Field>
                   <Field label="Accent colour" hint="dark mode"><Colour value={t.accentDark} onChange={(v) => set(['theme', 'accentDark'], v)} /></Field>
@@ -467,6 +614,38 @@ export default function Admin({ content, setContent, onExit }) {
                   <Field label="Linked phrase in the note"><Text value={content.publications.noteLinkText} onChange={(v) => set(['publications', 'noteLinkText'], v)} /></Field>
                   <Field label="Where it links"><Text value={content.publications.noteLinkUrl} onChange={(v) => set(['publications', 'noteLinkUrl'], v)} /></Field>
                 </div>
+                <section className="ad-help" aria-label="Look up a paper by DOI or ORCID">
+                  <div className="ad-grid">
+                    <Field label="Look up a DOI" hint="Crossref; you review before anything changes">
+                      <Text value={lookup.doi} placeholder="10.1000/xyz123" onChange={(v) => setLookup((l) => ({ ...l, doi: v }))} />
+                    </Field>
+                    <Field label="Import from ORCID" hint="lists DOIs not yet on the page">
+                      <Text value={lookup.orcid} placeholder={(content.profile && content.profile.orcid) || '0000-0000-0000-0000'} onChange={(v) => setLookup((l) => ({ ...l, orcid: v }))} />
+                    </Field>
+                  </div>
+                  <button type="button" className="ad-btn" disabled={lookup.busy || !lookup.doi} onClick={findDoi}>Look up DOI</button>{' '}
+                  <button type="button" className="ad-btn" disabled={lookup.busy} onClick={importOrcid}>Check ORCID</button>
+                  {lookup.missing.length > 0 && (
+                    <ul>{lookup.missing.map((d) => (
+                      <li key={d}>{d} <button type="button" className="ad-btn ghost" onClick={() => setLookup((l) => ({ ...l, doi: d }))}>Use this DOI</button></li>
+                    ))}</ul>
+                  )}
+                  {review && (
+                    <div role="group" aria-label="Review proposed changes">
+                      <p><strong>{review.idx >= 0 ? `Matches paper ${review.idx + 1}.` : 'Not on the page yet; it would be added as a new paper.'} Tick the fields to apply. Nothing is applied until you press Apply.</strong></p>
+                      {review.diffs.length === 0 && <p>No differences.</p>}
+                      {review.diffs.map((d) => (
+                        <label key={d.field} style={{ display: 'block', margin: '6px 0' }}>
+                          <input type="checkbox" checked={review.ticked.includes(d.field)}
+                                 onChange={(e) => setReview((r) => ({ ...r, ticked: e.target.checked ? [...r.ticked, d.field] : r.ticked.filter((x) => x !== d.field) }))} />
+                          {' '}<strong>{d.field}</strong>: {d.from ? <s>{d.from}</s> : <em>empty</em>} {'→'} {d.to}
+                        </label>
+                      ))}
+                      <button type="button" className="ad-btn primary" disabled={!review.ticked.length} onClick={acceptReview}>Apply ticked fields</button>{' '}
+                      <button type="button" className="ad-btn ghost" onClick={() => setReview(null)}>Cancel</button>
+                    </div>
+                  )}
+                </section>
                 <Field label={`Papers (${(content.publications.items || []).length})`}>
                   <Rows items={content.publications.items} addLabel="paper"
                         blank={{ title: '', url: '', authors: '', me: 'E. Yousef', journal: '', tags: [], lead: '' }}
@@ -479,6 +658,10 @@ export default function Admin({ content, setContent, onExit }) {
                               <Field label="Your name as written" hint="gets bolded"><Text value={item.me} onChange={(v) => patch({ me: v })} /></Field>
                               <Field label="Journal"><Text value={item.journal} onChange={(v) => patch({ journal: v })} /></Field>
                               <Field label="Author note"><Text value={item.lead} placeholder="First author" onChange={(v) => patch({ lead: v })} /></Field>
+                            </div>
+                            <div className="ad-grid">
+                              <Field label="DOI"><Text value={item.doi} placeholder="10.1000/xyz123" onChange={(v) => patch({ doi: v })} /></Field>
+                              <Field label="Year"><Text value={item.year} onChange={(v) => patch({ year: v })} /></Field>
                             </div>
                             <Field label="Link"><Text value={item.url} onChange={(v) => patch({ url: v })} /></Field>
                             <Field label="Small tags" hint="JIF, quartile, citations">
@@ -499,12 +682,34 @@ export default function Admin({ content, setContent, onExit }) {
                 <Field label="Intro paragraphs"><ParaList items={content.software.intro} onChange={(v) => set(['software', 'intro'], v)} /></Field>
                 <Field label="Projects">
                   <Rows items={content.software.projects} addLabel="project"
-                        blank={{ name: '', pills: [], ghostPills: [], desc: '', featured: { src: '', cap: '' }, thumbs: [], facts: [], links: [] }}
+                        blank={{ name: '', status: '', platforms: [], version: '', channel: '', license: '', docsUrl: '', changelogUrl: '', downloads: [], detail: [], pills: [], ghostPills: [], desc: '', featured: { src: '', cap: '' }, thumbs: [], facts: [], links: [] }}
                         onChange={(v) => set(['software', 'projects'], v)}
                         render={(item, patch) => (
                           <>
                             <Field label="Name"><Text value={item.name} onChange={(v) => patch({ name: v })} /></Field>
-                            <Field label="Description"><Area value={item.desc} onChange={(v) => patch({ desc: v })} /></Field>
+                            <div className="ad-grid">
+                              <Field label="Status" hint="shown on the card; leave empty if unsure">
+                                <Select value={item.status} options={PROJECT_STATUSES} onChange={(v) => patch({ status: v })} />
+                              </Field>
+                              <Field label="Version"><Text value={item.version} onChange={(v) => patch({ version: v })} /></Field>
+                              <Field label="Release channel"><Text value={item.channel} placeholder="stable, beta" onChange={(v) => patch({ channel: v })} /></Field>
+                              <Field label="License"><Text value={item.license} onChange={(v) => patch({ license: v })} /></Field>
+                              <Field label="Documentation link"><Text value={item.docsUrl} onChange={(v) => patch({ docsUrl: v })} /></Field>
+                              <Field label="Changelog link"><Text value={item.changelogUrl} onChange={(v) => patch({ changelogUrl: v })} /></Field>
+                            </div>
+                            <Field label="Platforms"><StringList items={item.platforms} placeholder="Windows, macOS, Linux" onChange={(v) => patch({ platforms: v })} /></Field>
+                            <Field label="Downloads" hint="only links that exist">
+                              <Rows items={item.downloads} blank={{ label: '', url: '', platform: '' }} addLabel="download"
+                                    onChange={(v) => patch({ downloads: v })}
+                                    render={(d, dpatch) => (
+                                      <div className="ad-grid">
+                                        <Field label="Label"><Text value={d.label} onChange={(v) => dpatch({ label: v })} /></Field>
+                                        <Field label="URL"><Text value={d.url} onChange={(v) => dpatch({ url: v })} /></Field>
+                                        <Field label="Platform"><Text value={d.platform} onChange={(v) => dpatch({ platform: v })} /></Field>
+                                      </div>
+                                    )} />
+                            </Field>
+                            <Field label="Project page text" hint="paragraphs for its own page"><ParaList items={item.detail} onChange={(v) => patch({ detail: v })} /></Field>
                             <div className="ad-grid">
                               <Field label="Filled tags"><StringList items={item.pills} onChange={(v) => patch({ pills: v })} /></Field>
                               <Field label="Outline tags"><StringList items={item.ghostPills} onChange={(v) => patch({ ghostPills: v })} /></Field>
@@ -694,9 +899,73 @@ export default function Admin({ content, setContent, onExit }) {
                   <Area rows={3} value={content.meta.description} onChange={(v) => set(['meta', 'description'], v)} />
                 </Field>
                 <div className="ad-grid">
+                  <Field label="ORCID iD" hint="0000-0000-0000-0000"><Text value={content.profile && content.profile.orcid} onChange={(v) => set(['profile', 'orcid'], v)} /></Field>
+                  <Field label="CV link" hint="a PDF you host or link"><Text value={content.profile && content.profile.cvUrl} onChange={(v) => set(['profile', 'cvUrl'], v)} /></Field>
+                </div>
+                <div className="ad-grid">
                   <Field label="Footer left"><Text value={content.footer.left} onChange={(v) => set(['footer', 'left'], v)} /></Field>
                   <Field label="Footer right"><Text value={content.footer.right} onChange={(v) => set(['footer', 'right'], v)} /></Field>
                 </div>
+              </>
+            )}
+
+            {tab === 'blocks' && (
+              <>
+                <p className="ad-help">Extra sections appear after the main ones, for talks, teaching, collaboration or anything else. Each needs a title.</p>
+                <Rows items={content.blocks} addLabel="section"
+                      blank={{ title: '', eyebrow: '', paragraphs: [], links: [] }}
+                      onChange={(v) => set(['blocks'], v)}
+                      render={(b, patch) => (
+                        <>
+                          <div className="ad-grid">
+                            <Field label="Title"><Text value={b.title} onChange={(v) => patch({ title: v })} /></Field>
+                            <Field label="Small label"><Text value={b.eyebrow} onChange={(v) => patch({ eyebrow: v })} /></Field>
+                          </div>
+                          <Field label="Paragraphs"><ParaList items={b.paragraphs} onChange={(v) => patch({ paragraphs: v })} /></Field>
+                          <Field label="Links">
+                            <Rows items={b.links} blank={{ label: '', url: '' }} addLabel="link" onChange={(v) => patch({ links: v })}
+                                  render={(l, lpatch) => (
+                                    <div className="ad-grid">
+                                      <Field label="Label"><Text value={l.label} onChange={(v) => lpatch({ label: v })} /></Field>
+                                      <Field label="URL"><Text value={l.url} onChange={(v) => lpatch({ url: v })} /></Field>
+                                    </div>
+                                  )} />
+                          </Field>
+                        </>
+                      )} />
+              </>
+            )}
+
+            {tab === 'checks' && (() => {
+              const problems = validate(content);
+              const warns = checkContent(content);
+              return (
+                <>
+                  <p className="ad-help">Problems block publishing. Warnings do not, but each one is something a visitor or screen reader would notice.</p>
+                  <h2>Problems ({problems.length})</h2>
+                  {problems.length === 0 ? <p>None.</p> : <ul>{problems.map((p, i) => <li key={i}>{p.path}: {p.message}</li>)}</ul>}
+                  <h2>Warnings and notes ({warns.length})</h2>
+                  {warns.length === 0 ? <p>None.</p> : <ul>{warns.map((w, i) => <li key={i}><strong>{w.level === 'warn' ? 'Warning' : 'Note'}</strong> · {w.where}: {w.message}</li>)}</ul>}
+                </>
+              );
+            })()}
+
+            {tab === 'history' && (
+              <>
+                <p className="ad-help">Every publish archives the previous live copy; the latest 30 are kept. Loading one only puts it on screen; nothing changes until you publish.</p>
+                <p>Saved draft: {fmt(draftAt)}. <button type="button" className="ad-btn" onClick={loadDraft}>Load saved draft</button></p>
+                <h2>Earlier versions</h2>
+                {versions === null
+                  ? <button type="button" className="ad-btn" onClick={loadHistory}>Show earlier versions</button>
+                  : versions.length === 0 ? <p>No earlier versions yet.</p>
+                    : <ul>{versions.map((v) => (
+                      <li key={v.id}>{fmt(v.savedAt)} ({Math.round(v.size / 1024)} KB) <button type="button" className="ad-btn" onClick={() => loadVersion(v)}>Load this version</button></li>
+                    ))}</ul>}
+                <h2>Backup file</h2>
+                <p>Keep a copy on your computer, or restore one.</p>
+                <button type="button" className="ad-btn" onClick={exportJson}>Export JSON</button>{' '}
+                <button type="button" className="ad-btn" onClick={() => importRef.current.click()}>Import JSON</button>
+                <input ref={importRef} type="file" accept="application/json,.json" hidden aria-label="Import a content backup" onChange={importJson} />
               </>
             )}
 

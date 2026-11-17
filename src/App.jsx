@@ -1,19 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import seed from './content.generated.json';
 import { api } from './lib/api.js';
-import { css, fontHref } from './theme.js';
+import { loadContent } from './lib/merge.js';
+import { css } from './theme.js';
 import Site from './site/Site.jsx';
-import Admin from './admin/Admin.jsx';
+import ProjectPage from './site/ProjectPage.jsx';
+import { projectSlugs, slugFromPath } from './lib/slug.js';
 
-/** Deep merge so a saved document that predates a new field still renders. */
-function merge(base, override) {
-  if (Array.isArray(override)) return override;
-  if (override && typeof override === 'object' && !Array.isArray(base) && base && typeof base === 'object') {
-    const out = { ...base };
-    for (const k of Object.keys(override)) out[k] = merge(base[k], override[k]);
-    return out;
-  }
-  return override === undefined ? base : override;
+// The dashboard is a third of the code and visitors never open it, so it is
+// fetched only when someone goes to #admin.
+const Admin = lazy(() => import('./admin/Admin.jsx'));
+
+function Missing({ c }) {
+  return (
+    <main id="main" className="page project-page">
+      <h1>This project is no longer listed</h1>
+      <p><a href="/#software">See the current software</a> or go to <a href="/">{c.hero.name}</a>.</p>
+    </main>
+  );
 }
 
 const CACHE_KEY = 'site-content-v1';
@@ -23,9 +27,9 @@ const CACHE_KEY = 'site-content-v1';
 function cached() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? merge(seed, JSON.parse(raw)) : seed;
+    return loadContent(seed, raw ? JSON.parse(raw) : null);
   } catch {
-    return seed;
+    return loadContent(seed, null);
   }
 }
 
@@ -40,7 +44,7 @@ export default function App() {
       .getContent()
       .then((r) => {
         if (!alive || !r || !r.content) return;
-        setContent(merge(seed, r.content));
+        setContent(loadContent(seed, r.content));
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(r.content)); } catch { /* private mode */ }
       })
       .catch(() => { /* fall back to the version shipped with the build */ })
@@ -56,7 +60,6 @@ export default function App() {
 
   const theme = content.theme || seed.theme;
   const sheet = useMemo(() => css(theme), [theme]);
-  const fonts = useMemo(() => fontHref(theme), [theme]);
 
   useEffect(() => {
     let el = document.getElementById('theme-css');
@@ -68,24 +71,17 @@ export default function App() {
     el.textContent = sheet;
   }, [sheet]);
 
-  useEffect(() => {
-    let link = document.getElementById('theme-fonts');
-    if (!link) {
-      link = document.createElement('link');
-      link.id = 'theme-fonts';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-    }
-    if (link.href !== fonts) link.href = fonts;
-  }, [fonts]);
+  const slug = slugFromPath(window.location.pathname);
+  const projectIndex = slug ? projectSlugs(content.software.projects).indexOf(slug) : -1;
 
   useEffect(() => {
+    if (slug) return;   // a project page sets its own title
     if (content.meta) {
       if (content.meta.title) document.title = content.meta.title;
       const d = document.querySelector('meta[name="description"]');
       if (d && content.meta.description) d.setAttribute('content', content.meta.description);
     }
-  }, [content.meta]);
+  }, [content.meta, slug]);
 
   const exitAdmin = useCallback(() => {
     window.location.hash = '';
@@ -94,14 +90,19 @@ export default function App() {
 
   return (
     <>
-      <Site c={content} />
+      {!slug && <Site c={content} />}
+      {slug && projectIndex >= 0 && <ProjectPage c={content} index={projectIndex} />}
+      {slug && projectIndex < 0 && <Missing c={content} />}
       {isAdmin && (
-        <Admin
-          content={content}
-          setContent={setContent}
-          onExit={exitAdmin}
-          loaded={loaded}
-        />
+        <Suspense fallback={<div className="ad-loading" role="status">Loading the dashboard…</div>}>
+          <Admin
+            content={content}
+            setContent={setContent}
+            onExit={exitAdmin}
+            loaded={loaded}
+            base={seed}
+          />
+        </Suspense>
       )}
     </>
   );

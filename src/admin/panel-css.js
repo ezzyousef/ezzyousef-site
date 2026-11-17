@@ -66,7 +66,7 @@ export const PANEL_CSS = `
 
 .ad-field { display: flex; flex-direction: column; gap: 6px; }
 .ad-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ad-dim, #5E6870); }
-.ad-label em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: .7; margin-left: 7px; }
+.ad-label em { font-style: normal; text-transform: none; letter-spacing: 0; margin-left: 7px; }
 
 .ad-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
 

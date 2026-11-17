@@ -6,19 +6,39 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/fetch-content.mjs && vite build && node scripts/prerender.mjs",
+    "build:local": "node scripts/fetch-content.mjs --offline && vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
-    "hash": "node scripts/hash-password.js"
+    "hash": "node scripts/hash-password.js",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:html": "html-validate \"dist/**/*.html\"",
+    "test:e2e": "node tests/e2e/site-qa.mjs",
+    "qa": "npm run lint && npm test && npm run build:local && npm run test:html && npm run test:e2e"
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@vercel/blob": "^2.4.0",
     "bcryptjs": "3.0.3",
     "jose": "6.2.3",
     "react": "19.2.5",
     "react-dom": "19.2.5",
-    "sharp": "^0.34.5"
+    "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-react": "6.0.1",
-    "vite": "8.0.10"
+    "axe-core": "^4.14.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.5.0",
+    "html-validate": "^11.21.1",
+    "playwright-core": "^1.65.1",
+    "vite": "8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "zod": "^4.6.7"
   }
 }

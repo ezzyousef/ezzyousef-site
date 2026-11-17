@@ -57,8 +57,16 @@ straight to storage and is live immediately.
 ## Editing
 
 Open the site, add `#admin`, sign in. The page behind the panel updates as you
-type, and nothing is public until you press **Save**. **Preview site** hides the
-panel so you can see the page on its own; Esc brings it back.
+type. **Save draft** stores your work without touching the live site;
+**Publish** validates it, archives the current live copy and goes live (it asks
+first if the Checks tab has accessibility warnings). **Preview site** hides the
+panel; Esc brings it back. The **History & backup** tab loads the saved draft or
+any of the last 30 live versions onto the screen, and exports or imports a JSON
+file. In **Publications** you can look up a DOI on Crossref or list DOIs from
+your ORCID record; proposed changes are shown field by field and only the ones
+you tick are applied. The session token renews itself every 20 minutes.
+Preview deployments can save drafts but cannot publish unless
+`ALLOW_PREVIEW_PUBLISH=1` is set.
 
 ## Running locally
 
@@ -67,12 +75,16 @@ npm install
 npm run dev
 ```
 
+Checks: `npm run qa` runs lint, unit tests, an offline build, html-validate and
+the axe/Playwright page check (needs a local Chrome or Edge).
+
 The dashboard needs the API, which only runs on Vercel, so locally the site
 renders from `data/seed.json` and saving is unavailable.
 
 ## Security notes
 
 - The password is stored only as a bcrypt hash, in an environment variable.
+- Tokens last 2 hours, carry an audience, and are renewed while the dashboard is open.
 - The login token is held in memory, never in localStorage, so closing the tab
   signs you out.
 - Login attempts are rate limited.
