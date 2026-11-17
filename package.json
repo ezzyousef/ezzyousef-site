@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/fetch-content.mjs && vite build && node scripts/prerender.mjs",
+    "build:local": "node scripts/fetch-content.mjs --offline && vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
     "hash": "node scripts/hash-password.js",
     "lint": "eslint .",
     "test": "vitest run",
     "test:html": "html-validate \"dist/**/*.html\"",
     "test:e2e": "node tests/e2e/site-qa.mjs",
-    "qa": "npm run lint && npm test && npm run build && npm run test:html && npm run test:e2e"
+    "qa": "npm run lint && npm test && npm run build:local && npm run test:html && npm run test:e2e"
   },
   "dependencies": {
     "@vercel/blob": "^2.4.0",

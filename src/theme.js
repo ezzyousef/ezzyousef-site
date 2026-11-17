@@ -11,7 +11,39 @@ const WEIGHTS = {
   mono: 'wght@400;500',
 };
 
-export function fontHref(theme) {
+/** Fallbacks used when a stored theme value is not one we can trust. */
+const DEFAULTS = {
+  accent: '#A32617', accentDark: '#E0705F', ground: '#FCFBF8', surface: '#FFFFFF',
+  ink: '#1A1A18', muted: '#27406B', hair: '#D7DAE2',
+  fontDisplay: 'Newsreader', fontBody: 'Archivo', fontMono: 'IBM Plex Mono',
+  baseSize: 17, heroSize: 64, headingSize: 32, radius: 2,
+};
+const RANGES = { baseSize: [12, 24], heroSize: [28, 120], headingSize: [18, 72], radius: [0, 40] };
+
+/**
+ * Every theme value ends up inside the generated stylesheet, so each one is
+ * checked here as well as on the server: colours must be plain hex, fonts
+ * must be on the offered list and sizes must be numbers in range. Anything
+ * else falls back to the default instead of reaching the CSS.
+ */
+export function cleanTheme(t) {
+  const src = t && typeof t === 'object' ? t : {};
+  const out = { ...DEFAULTS };
+  for (const k of ['accent', 'accentDark', 'ground', 'surface', 'ink', 'muted', 'hair']) {
+    if (/^#[0-9a-f]{6}$/i.test(String(src[k]))) out[k] = src[k];
+  }
+  for (const [k, list] of [['fontDisplay', FONTS.display], ['fontBody', FONTS.body], ['fontMono', FONTS.mono]]) {
+    if (list.includes(src[k])) out[k] = src[k];
+  }
+  for (const [k, [lo, hi]] of Object.entries(RANGES)) {
+    const n = src[k];
+    if (typeof n === 'number' && Number.isFinite(n)) out[k] = Math.min(hi, Math.max(lo, n));
+  }
+  return out;
+}
+
+export function fontHref(input) {
+  const theme = cleanTheme(input);
   const fams = [
     [theme.fontDisplay, WEIGHTS.display],
     [theme.fontBody, WEIGHTS.body],
@@ -50,12 +82,13 @@ function rgba(hex, alpha) {
  * hairline rules instead of boxes, and a single spot colour used the way a
  * second ink would be on press.
  */
-export function css(t) {
+export function css(input) {
+  const t = cleanTheme(input);
   const tint = rgba(t.accent, 0.07);
   const sunken = shift(t.ground, -0.025);
   const faint = t.muted;
 
-  const dAccent = t.accentDark || '#E0705F';
+  const dAccent = t.accentDark;
   const darkTokens = `
     --paper: ${shift(t.ground, -0.92)};
     --surface: ${shift(t.surface, -0.88)};

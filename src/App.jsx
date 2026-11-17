@@ -1,20 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import seed from './content.generated.json';
 import { api } from './lib/api.js';
+import { loadContent } from './lib/merge.js';
 import { css, fontHref } from './theme.js';
 import Site from './site/Site.jsx';
 import Admin from './admin/Admin.jsx';
-
-/** Deep merge so a saved document that predates a new field still renders. */
-function merge(base, override) {
-  if (Array.isArray(override)) return override;
-  if (override && typeof override === 'object' && !Array.isArray(base) && base && typeof base === 'object') {
-    const out = { ...base };
-    for (const k of Object.keys(override)) out[k] = merge(base[k], override[k]);
-    return out;
-  }
-  return override === undefined ? base : override;
-}
 
 const CACHE_KEY = 'site-content-v1';
 
@@ -23,9 +13,9 @@ const CACHE_KEY = 'site-content-v1';
 function cached() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? merge(seed, JSON.parse(raw)) : seed;
+    return loadContent(seed, raw ? JSON.parse(raw) : null);
   } catch {
-    return seed;
+    return loadContent(seed, null);
   }
 }
 
@@ -40,7 +30,7 @@ export default function App() {
       .getContent()
       .then((r) => {
         if (!alive || !r || !r.content) return;
-        setContent(merge(seed, r.content));
+        setContent(loadContent(seed, r.content));
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(r.content)); } catch { /* private mode */ }
       })
       .catch(() => { /* fall back to the version shipped with the build */ })
